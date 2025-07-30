@@ -1,0 +1,271 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "create": "Criar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "yes": "Sim",
+    "no": "Não"
+  },
+  "auth": {
+    "login": "Entrar",
+    "signup": "Cadastrar",
+    "logout": "Sair",
+    "email": "Email",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
+    "name": "Nome Completo",
+    "forgotPassword": "Esqueceu a senha?",
+    "rememberMe": "Lembrar de mim",
+    "alreadyHaveAccount": "Já tem uma conta?",
+    "dontHaveAccount": "Não tem uma conta?",
+    "signUpFree": "Cadastre-se grátis",
+    "welcomeBack": "Bem-vindo de volta",
+    "createAccount": "Crie sua conta",
+    "loginError": "Email ou senha incorretos",
+    "signupError": "Não foi possível criar a conta",
+    "passwordTooShort": "A senha deve ter pelo menos 6 caracteres",
+    "passwordsDontMatch": "As senhas não coincidem"
+  },
+  "landing": {
+    "tagline": "Quem viveu sabe. Sabe mesmo? Teste seus conhecimentos agora",
+    "subtitle": "Crie quizzes divertidos sobre sua história de amor e desafie seus convidados a descobrir o quanto eles realmente sabem sobre vocês",
+    "createQuiz": "Criar Meu Quiz",
+    "watchDemo": "Ver Demonstração",
+    "trustedBy": "Mais de 1.000 casais já criaram seus quizzes",
+    "features": {
+      "title": "Tudo que você precisa para um quiz perfeito",
+      "subtitle": "Ferramentas simples e poderosas para criar experiências memoráveis",
+      "intuitive": {
+        "title": "Criação Intuitiva",
+        "description": "Interface simples para criar perguntas personalizadas sobre sua história de amor"
+      },
+      "mobile": {
+        "title": "Experiência Mobile",
+        "description": "Seus convidados podem participar facilmente pelo celular"
+      },
+      "results": {
+        "title": "Ranking e Resultados",
+        "description": "Veja quem conhece vocês melhor com rankings em tempo real"
+      }
+    },
+    "cta": {
+      "title": "Pronto para surpreender seus convidados?",
+      "subtitle": "Comece gratuitamente e crie seu primeiro quiz em minutos"
+    }
+  },
+  "dashboard": {
+    "title": "Meus Quizzes",
+    "subtitle": "Gerencie seus quizzes de casamento",
+    "newQuiz": "Novo Quiz",
+    "noQuizzes": {
+      "title": "Nenhum quiz criado ainda",
+      "subtitle": "Comece criando seu primeiro quiz para o casamento",
+      "cta": "Criar Primeiro Quiz"
+    },
+    "plan": {
+      "title": "Plano {{plan}}",
+      "guests": "Convidados: {{used}}/{{max}}",
+      "quizzes": "Quizzes: {{used}}/{{max}}",
+      "upgrade": "Fazer Upgrade",
+      "guestsUsed": "Convidados utilizados"
+    },
+    "quiz": {
+      "questions": "Perguntas",
+      "responses": "Respostas",
+      "event": "Evento: {{date}}",
+      "copyLink": "Copiar Link",
+      "qrCode": "QR Code",
+      "results": "Resultados",
+      "active": "Ativo",
+      "draft": "Rascunho"
+    }
+  },
+  "quiz": {
+    "create": {
+      "title": "Criar Novo Quiz",
+      "subtitle": "Configure as informações básicas e adicione suas perguntas",
+      "information": "Informações do Quiz",
+      "titleLabel": "Título do Quiz",
+      "titlePlaceholder": "Ex: Nossa História de Amor",
+      "eventDate": "Data do Evento",
+      "questions": "Perguntas",
+      "addQuestion": "Adicionar Pergunta",
+      "questionText": "Texto da Pergunta",
+      "questionPlaceholder": "Ex: Onde nos conhecemos?",
+      "answerOptions": "Opções de Resposta",
+      "optionPlaceholder": "Opção {{number}}",
+      "correctAnswer": "Correta",
+      "selectCorrect": "Selecione o botão de opção ao lado da resposta correta",
+      "titleRequired": "Título é obrigatório",
+      "questionsIncomplete": "Por favor, complete todas as perguntas e opções",
+      "quizCreated": "Quiz criado!",
+      "quizSaved": "Seu quiz foi salvo com sucesso",
+      "saveError": "Não foi possível salvar o quiz. Tente novamente.",
+      "saveQuiz": "Salvar Quiz",
+      "saving": "Salvando...",
+      "preview": "Visualizar",
+      "customize": "Personalizar"
+    },
+    "guest": {
+      "testKnowledge": "Teste seus conhecimentos sobre o casal",
+      "enterName": "Seu nome",
+      "namePlaceholder": "Digite seu nome",
+      "startQuiz": "Começar Quiz",
+      "question": "Pergunta {{current}} de {{total}}",
+      "timeRemaining": "{{time}} restantes",
+      "correct": "Correto!",
+      "incorrect": "Incorreto!",
+      "congratulations": "Parabéns, {{name}}!",
+      "completed": "Você completou o quiz \"{{title}}\"",
+      "score": "Pontuação",
+      "position": "Posição",
+      "correctAnswers": "Acertos",
+      "playAgain": "Jogar Novamente",
+      "shareResult": "Compartilhar Resultado",
+      "leaderboard": "Ranking",
+      "nameExists": "Este nome já foi usado neste quiz",
+      "tooManyAttempts": "Muitas tentativas deste dispositivo",
+      "quizNotFound": "Quiz não encontrado ou não ativo",
+      "guestLimitReached": "Quiz atingiu o número máximo de convidados"
+    },
+    "results": {
+      "title": "Resultados: {{title}}",
+      "subtitle": "Estatísticas e respostas dos convidados",
+      "participants": "Participantes",
+      "averageScore": "Pontuação Média",
+      "averageTime": "Tempo Médio",
+      "completionRate": "Taxa de Conclusão",
+      "questionAnalysis": "Análise das Perguntas",
+      "export": "Exportar",
+      "share": "Compartilhar",
+      "noParticipants": "Nenhum participante ainda",
+      "noQuestions": "Nenhuma pergunta cadastrada",
+      "correctAnswers": "{{correct}} de {{total}} acertaram"
+    }
+  },
+  "pricing": {
+    "title": "Escolha o plano perfeito",
+    "subtitle": "Comece gratuitamente e faça upgrade conforme seu casamento cresce",
+    "monthly": "Mensal",
+    "yearly": "Anual",
+    "save": "-20%",
+    "free": {
+      "name": "Gratuito",
+      "description": "Perfeito para testar a plataforma",
+      "cta": "Começar Grátis"
+    },
+    "starter": {
+      "name": "Iniciante",
+      "description": "Ideal para casamentos pequenos",
+      "cta": "Escolher Plano"
+    },
+    "pro": {
+      "name": "Profissional",
+      "description": "Para casamentos médios",
+      "cta": "Escolher Plano",
+      "popular": "Mais Popular"
+    },
+    "premium": {
+      "name": "Premium",
+      "description": "Para casamentos grandes",
+      "cta": "Escolher Plano"
+    },
+    "features": {
+      "activeQuizzes": "{{count}} quiz ativo",
+      "activeQuizzes_plural": "Até {{count}} quizzes ativos",
+      "unlimitedQuizzes": "Quizzes ilimitados",
+      "guests": "Até {{count}} convidados",
+      "basicThemes": "{{count}} temas básicos",
+      "allThemes": "Todos os temas",
+      "premiumThemes": "Temas premium",
+      "exclusiveThemes": "Temas exclusivos",
+      "emailSupport": "Suporte por email",
+      "prioritySupport": "Suporte prioritário",
+      "support247": "Suporte 24/7",
+      "dedicatedSupport": "Suporte dedicado",
+      "basicResults": "Resultados básicos",
+      "detailedStats": "Estatísticas detalhadas",
+      "advancedAnalytics": "Analytics avançados",
+      "noWatermark": "Sem marca VowPlay",
+      "basicCustomization": "Personalização básica",
+      "fullCustomization": "Personalização completa",
+      "customQR": "QR codes personalizados",
+      "exportResults": "Exportar resultados",
+      "whiteLabel": "White-label completo",
+      "customAPI": "API personalizada",
+      "consulting": "Consultoria inclusa"
+    },
+    "additionalGuests": {
+      "title": "Precisa de mais convidados?",
+      "subtitle": "Adicione mais convidados por apenas R$5 a cada 30 pessoas",
+      "extra30": "+30 convidados extras",
+      "extra60": "+60 convidados extras",
+      "extra100": "+100 convidados extras"
+    },
+    "faq": {
+      "title": "Perguntas Frequentes",
+      "cancel": {
+        "question": "Posso cancelar a qualquer momento?",
+        "answer": "Sim, você pode cancelar sua assinatura a qualquer momento sem taxas de cancelamento."
+      },
+      "exceed": {
+        "question": "O que acontece se eu exceder o limite de convidados?",
+        "answer": "Você será notificado e poderá fazer upgrade ou adicionar convidados extras antes de ativar o quiz."
+      },
+      "changePlan": {
+        "question": "Posso mudar de plano depois?",
+        "answer": "Claro! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento."
+      },
+      "dataRetention": {
+        "question": "Os dados ficam salvos se eu cancelar?",
+        "answer": "Seus quizzes ficam salvos por 30 dias após o cancelamento para caso você queira reativar."
+      }
+    },
+    "cta": {
+      "title": "Pronto para começar?",
+      "subtitle": "Crie sua conta gratuita e comece a surpreender seus convidados",
+      "startFree": "Começar Grátis Agora"
+    }
+  },
+  "settings": {
+    "title": "Configurações da Conta",
+    "subtitle": "Gerencie suas informações pessoais e preferências",
+    "profile": "Perfil",
+    "billing": "Cobrança",
+    "notifications": "Notificações",
+    "security": "Segurança",
+    "inDevelopment": "Configurações em desenvolvimento..."
+  },
+  "qr": {
+    "title": "QR Code do Quiz",
+    "subtitle": "Seus convidados podem escanear este QR Code para acessar o quiz",
+    "download": "Baixar QR Code",
+    "linkCopied": "Link copiado!",
+    "linkCopiedMessage": "O link do quiz foi copiado para a área de transferência",
+    "qrDownloaded": "QR Code baixado!",
+    "qrDownloadedMessage": "O QR Code foi salvo em seus downloads"
+  },
+  "errors": {
+    "generic": "Ocorreu um erro. Tente novamente.",
+    "network": "Erro de rede. Verifique sua conexão.",
+    "unauthorized": "Você não tem autorização para realizar esta ação.",
+    "notFound": "O recurso solicitado não foi encontrado.",
+    "validation": "Por favor, verifique os dados inseridos."
+  },
+  "success": {
+    "saved": "Salvo com sucesso!",
+    "created": "Criado com sucesso!",
+    "updated": "Atualizado com sucesso!",
+    "deleted": "Excluído com sucesso!"
+  }
+}

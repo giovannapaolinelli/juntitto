@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Play, Settings, BarChart3, Users, Calendar, Copy, QrCode, MoreVertical } from 'lucide-react';
-import { useQuizzes } from '../../hooks/useQuizzes';
+import { useQuizViewModel } from '../../viewmodels/QuizViewModel';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useTranslation } from 'react-i18next';
 import QRCodeModal from '../../components/quiz/QRCodeModal';
 
 const Dashboard = () => {
-  const { quizzes, loading } = useQuizzes();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const { quizzes, loading } = useQuizViewModel(user?.id);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
 
@@ -44,8 +46,8 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Meus Quizzes</h1>
-          <p className="text-gray-600">Gerencie seus quizzes de casamento</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('dashboard.title')}</h1>
+          <p className="text-gray-600">{t('dashboard.subtitle')}</p>
         </div>
         
         <div className="flex items-center space-x-4 mt-4 md:mt-0">
@@ -54,7 +56,7 @@ const Dashboard = () => {
             className="bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"
           >
             <Plus className="w-5 h-5" />
-            <span>Novo Quiz</span>
+            <span>{t('dashboard.newQuiz')}</span>
           </Link>
         </div>
       </div>
@@ -63,10 +65,10 @@ const Dashboard = () => {
       <div className="bg-gradient-to-r from-rose-50 to-purple-50 rounded-xl p-6 mb-8 border border-rose-100">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Plano {currentPlan.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('dashboard.plan.title', { plan: currentPlan.name })}</h3>
             <div className="flex items-center space-x-6 text-sm text-gray-600">
-              <span>Convidados: {currentPlan.usedGuests}/{currentPlan.maxGuests}</span>
-              <span>Quizzes: {currentPlan.usedQuizzes}/{currentPlan.maxQuizzes}</span>
+              <span>{t('dashboard.plan.guests', { used: currentPlan.usedGuests, max: currentPlan.maxGuests })}</span>
+              <span>{t('dashboard.plan.quizzes', { used: currentPlan.usedQuizzes, max: currentPlan.maxQuizzes })}</span>
             </div>
           </div>
           
@@ -74,14 +76,14 @@ const Dashboard = () => {
             to="/pricing"
             className="mt-4 md:mt-0 bg-white text-purple-600 px-4 py-2 rounded-lg hover:shadow-md transition-shadow border border-purple-200"
           >
-            Fazer Upgrade
+            {t('dashboard.plan.upgrade')}
           </Link>
         </div>
         
         {/* Progress Bar */}
         <div className="mt-4">
           <div className="flex justify-between text-sm text-gray-600 mb-1">
-            <span>Convidados utilizados</span>
+            <span>{t('dashboard.plan.guestsUsed')}</span>
             <span>{Math.round((currentPlan.usedGuests / currentPlan.maxGuests) * 100)}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -97,7 +99,7 @@ const Dashboard = () => {
       {loading ? (
         <div className="text-center py-16">
           <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando seus quizzes...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       ) : (
       <>
@@ -106,14 +108,14 @@ const Dashboard = () => {
           <div className="w-24 h-24 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Play className="w-12 h-12 text-rose-500" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhum quiz criado ainda</h3>
-          <p className="text-gray-600 mb-6">Comece criando seu primeiro quiz para o casamento</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('dashboard.noQuizzes.title')}</h3>
+          <p className="text-gray-600 mb-6">{t('dashboard.noQuizzes.subtitle')}</p>
           <Link 
             to="/quiz/new"
             className="inline-flex items-center bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 space-x-2"
           >
             <Plus className="w-5 h-5" />
-            <span>Criar Primeiro Quiz</span>
+            <span>{t('dashboard.noQuizzes.cta')}</span>
           </Link>
         </div>
       ) : (
@@ -131,7 +133,7 @@ const Dashboard = () => {
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {quiz.status === 'active' ? 'Ativo' : 'Rascunho'}
+                        {quiz.status === 'active' ? t('dashboard.quiz.active') : t('dashboard.quiz.draft')}
                       </span>
                     </div>
                   </div>
@@ -147,35 +149,39 @@ const Dashboard = () => {
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="text-center p-3 bg-rose-50 rounded-lg">
                     <Users className="w-5 h-5 text-rose-600 mx-auto mb-1" />
-                    <div className="text-lg font-semibold text-gray-900">{quiz.questions.length}</div>
-                    <div className="text-xs text-gray-600">Perguntas</div>
+                    <div className="text-lg font-semibold text-gray-900">{quiz.questions?.length || 0}</div>
+                    <div className="text-xs text-gray-600">{t('dashboard.quiz.questions')}</div>
                   </div>
                   <div className="text-center p-3 bg-purple-50 rounded-lg">
                     <BarChart3 className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-                    <div className="text-lg font-semibold text-gray-900">0</div>
-                    <div className="text-xs text-gray-600">Respostas</div>
+                    <div className="text-lg font-semibold text-gray-900">{quiz.guest_count}</div>
+                    <div className="text-xs text-gray-600">{t('dashboard.quiz.responses')}</div>
                   </div>
                 </div>
 
                 {/* Event Date */}
                 <div className="flex items-center text-sm text-gray-600 mb-6">
                   <Calendar className="w-4 h-4 mr-2" />
-                  <span>Evento: {new Date(quiz.eventDate).toLocaleDateString('pt-BR')}</span>
+                  <span>{t('dashboard.quiz.event', { date: new Date(quiz.event_date).toLocaleDateString() })}</span>
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-col space-y-2">
                   {quiz.status === 'active' && (
                     <div className="flex space-x-2">
-                      <button className="flex-1 bg-rose-50 text-rose-600 px-3 py-2 rounded-lg hover:bg-rose-100 transition-colors flex items-center justify-center space-x-1 text-sm">
+                      <button 
                         onClick={() => copyQuizLink(quiz.slug)}
+                        className="flex-1 bg-rose-50 text-rose-600 px-3 py-2 rounded-lg hover:bg-rose-100 transition-colors flex items-center justify-center space-x-1 text-sm"
+                      >
                         <Copy className="w-4 h-4" />
-                        <span>Copiar Link</span>
+                        <span>{t('dashboard.quiz.copyLink')}</span>
                       </button>
-                      <button className="flex-1 bg-purple-50 text-purple-600 px-3 py-2 rounded-lg hover:bg-purple-100 transition-colors flex items-center justify-center space-x-1 text-sm">
+                      <button 
                         onClick={() => generateQRCode(quiz.slug)}
+                        className="flex-1 bg-purple-50 text-purple-600 px-3 py-2 rounded-lg hover:bg-purple-100 transition-colors flex items-center justify-center space-x-1 text-sm"
+                      >
                         <QrCode className="w-4 h-4" />
-                        <span>QR Code</span>
+                        <span>{t('dashboard.quiz.qrCode')}</span>
                       </button>
                     </div>
                   )}
@@ -186,14 +192,14 @@ const Dashboard = () => {
                       className="flex-1 bg-gray-50 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center space-x-1 text-sm"
                     >
                       <Settings className="w-4 h-4" />
-                      <span>Editar</span>
+                      <span>{t('common.edit')}</span>
                     </Link>
                     <Link 
                       to={`/quiz/${quiz.id}/results`}
                       className="flex-1 bg-gray-50 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center space-x-1 text-sm"
                     >
                       <BarChart3 className="w-4 h-4" />
-                      <span>Resultados</span>
+                      <span>{t('dashboard.quiz.results')}</span>
                     </Link>
                   </div>
                 </div>

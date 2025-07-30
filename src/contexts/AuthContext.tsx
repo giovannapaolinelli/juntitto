@@ -1,17 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  plan: 'free' | 'starter' | 'pro' | 'premium';
-}
+import React, { createContext, useContext } from 'react';
+import { useAuthViewModel } from '../viewmodels/AuthViewModel';
+import { User } from '../models/User';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  signIn: (email: string, password: string) => Promise<User>;
+  signUp: (email: string, password: string, name: string) => Promise<User>;
+  signOut: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<User>;
+  resetPassword: (email: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -26,67 +23,10 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      // Mock login - replace with actual API call
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: 'João Silva',
-        plan: 'free'
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-    } catch (error) {
-      throw new Error('Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signup = async (email: string, password: string, name: string) => {
-    setLoading(true);
-    try {
-      // Mock signup - replace with actual API call
-      const mockUser: User = {
-        id: '1',
-        email,
-        name,
-        plan: 'free'
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-    } catch (error) {
-      throw new Error('Signup failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
+  const authViewModel = useAuthViewModel();
 
   const value = {
-    user,
-    login,
-    signup,
-    logout,
-    loading
+    ...authViewModel
   };
 
   return (
