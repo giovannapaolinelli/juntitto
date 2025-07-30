@@ -1,5 +1,9 @@
 import { supabase } from '../client';
+import { Database } from '../types';
 import { QuizResult, QuizStats } from '../../../models/Quiz';
+
+type ResultRow = Database['public']['Tables']['quiz_results']['Row'];
+type ResultInsert = Database['public']['Tables']['quiz_results']['Insert'];
 
 export class ResultRepository {
   async getQuizResults(quizId: string, page = 1, limit = 50): Promise<QuizResult[]> {
@@ -14,16 +18,23 @@ export class ResultRepository {
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(this.mapToResult);
   }
 
-  async createResult(result: Omit<QuizResult, 'id' | 'completed_at'>): Promise<QuizResult> {
+  async createResult(resultData: {
+    quiz_id: string;
+    guest_name: string;
+    guest_ip: string;
+    answers: number[];
+    score: number;
+    time_spent: number;
+  }): Promise<QuizResult> {
     // Check for duplicate guest name
     const { data: existing } = await supabase
       .from('quiz_results')
       .select('id')
-      .eq('quiz_id', result.quiz_id)
-      .eq('guest_name', result.guest_name)
+      .eq('quiz_id', resultData.quiz_id)
+      .eq('guest_name', resultData.guest_name)
       .single();
 
     if (existing) {
@@ -34,21 +45,30 @@ export class ResultRepository {
     const { data: ipResults } = await supabase
       .from('quiz_results')
       .select('id')
-      .eq('quiz_id', result.quiz_id)
-      .eq('guest_ip', result.guest_ip);
+      .eq('quiz_id', resultData.quiz_id)
+      .eq('guest_ip', resultData.guest_ip);
 
     if (ipResults && ipResults.length >= 3) {
       throw new Error('Too many submissions from this IP address');
     }
 
+    const insertData: ResultInsert = {
+      quiz_id: resultData.quiz_id,
+      guest_name: resultData.guest_name,
+      guest_ip: resultData.guest_ip,
+      answers: resultData.answers,
+      score: resultData.score,
+      time_spent: resultData.time_spent
+    };
+
     const { data, error } = await supabase
       .from('quiz_results')
-      .insert(result)
+      .insert(insertData)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return this.mapToResult(data);
   }
 
   async getQuizStats(quizId: string): Promise<QuizStats> {
@@ -75,9 +95,9 @@ export class ResultRepository {
     // Get quiz questions for question stats
     const { data: questions } = await supabase
       .from('questions')
-      .select('id, correct_answer')
+      .select('id, correct_answer, order_index')
       .eq('quiz_id', quizId)
-      .order('order');
+      .order('order_index');
 
     const questionStats = questions?.map((question, index) => {
       const correctAnswers = results.filter(r => 
@@ -113,8 +133,21 @@ export class ResultRepository {
     if (error) throw error;
 
     return (data || []).map((result, index) => ({
-      ...result,
+      ...this.mapToResult(result),
       position: index + 1
     }));
+  }
+
+  private mapToResult(row: ResultRow): QuizResult {
+    return {
+      id: row.id,
+      quiz_id: row.quiz_id,
+      guest_name: row.guest_name,
+      guest_ip: row.guest_ip,
+      answers: row.answers as number[],
+      score: row.score,
+      time_spent: row.time_spent,
+      completed_at: row.completed_at
+    };
   }
 }

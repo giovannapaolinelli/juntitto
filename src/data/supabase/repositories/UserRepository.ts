@@ -1,5 +1,10 @@
 import { supabase } from '../client';
+import { Database } from '../types';
 import { User } from '../../../models/User';
+
+type UserRow = Database['public']['Tables']['users']['Row'];
+type UserInsert = Database['public']['Tables']['users']['Insert'];
+type UserUpdate = Database['public']['Tables']['users']['Update'];
 
 export class UserRepository {
   async getCurrentUser(): Promise<User | null> {
@@ -13,7 +18,7 @@ export class UserRepository {
       .single();
 
     if (error) throw error;
-    return data;
+    return this.mapToUser(data);
   }
 
   async createUser(userData: {
@@ -21,31 +26,38 @@ export class UserRepository {
     email: string;
     name: string;
   }): Promise<User> {
+    const insertData: UserInsert = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      plan: 'free'
+    };
+
     const { data, error } = await supabase
       .from('users')
-      .insert({
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        plan: 'free'
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return this.mapToUser(data);
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
+    const updateData: UserUpdate = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('users')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return this.mapToUser(data);
   }
 
   async getUserUsage(userId: string): Promise<{
@@ -63,5 +75,17 @@ export class UserRepository {
     const total_guests = quizzes.reduce((sum, quiz) => sum + quiz.guest_count, 0);
 
     return { quiz_count, total_guests };
+  }
+
+  private mapToUser(row: UserRow): User {
+    return {
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      plan: row.plan as 'free' | 'starter' | 'pro' | 'premium',
+      stripe_customer_id: row.stripe_customer_id,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    };
   }
 }
