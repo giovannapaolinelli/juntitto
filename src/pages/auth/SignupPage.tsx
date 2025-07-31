@@ -48,11 +48,12 @@ const SignupPage = () => {
         message: 'Bem-vindo ao Juntitto'
       });
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Signup error:', error);
       addToast({
         type: 'error',
         title: 'Erro no cadastro',
-        message: 'Não foi possível criar sua conta. Tente novamente.'
+        message: error.message || 'Não foi possível criar sua conta. Tente novamente.'
       });
     } finally {
       setLoading(false);

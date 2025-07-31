@@ -27,11 +27,12 @@ const LoginPage = () => {
         message: 'Bem-vindo de volta ao Juntitto'
       });
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login error:', error);
       addToast({
         type: 'error',
         title: 'Erro no login',
-        message: 'Email ou senha incorretos'
+        message: error.message || 'Email ou senha incorretos'
       });
     } finally {
       setLoading(false);
