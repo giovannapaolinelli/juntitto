@@ -45,15 +45,20 @@ const SignupPage = () => {
       addToast({
         type: 'success',
         title: 'Conta criada com sucesso!',
-        message: 'Bem-vindo ao Juntitto'
+        message: 'Bem-vindo ao VowPlay! Redirecionando...'
       });
-      navigate('/dashboard');
+      
+      // Wait a moment for the user profile to be created, then redirect
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+      
     } catch (error: any) {
       console.error('Signup error:', error);
       addToast({
         type: 'error',
         title: 'Erro no cadastro',
-        message: error.message || 'Não foi possível criar sua conta. Tente novamente.'
+        message: 'Não foi possível criar sua conta. Verifique seus dados e tente novamente.'
       });
     } finally {
       setLoading(false);

@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
-      // Sign up with Supabase Auth
+      // Sign up with Supabase Auth - profile will be created automatically via trigger
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -82,20 +82,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       if (!data.user) throw new Error('Failed to create user');
 
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: data.user.id,
-          email: data.user.email!,
-          name,
-          plan: 'free'
-        });
-
-      if (profileError) throw profileError;
-
-      // Fetch the created profile
-      await fetchUserProfile(data.user.id);
+      // Profile is created automatically via database trigger
+      // Wait a moment for the trigger to complete, then fetch profile
+      setTimeout(async () => {
+        await fetchUserProfile(data.user.id);
+      }, 1000);
+      
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
