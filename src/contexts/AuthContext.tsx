@@ -14,37 +14,36 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const authViewModelRef = useRef<AuthViewModel>(new AuthViewModel());
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   console.log('AuthProvider: Component function called');
-  console.log('AuthProvider: Component rendering/mounting');
-  console.log('AuthProvider: Component rendering/mounting');
   
   // Use useRef to ensure AuthViewModel instance is stable across re-renders
-  const authViewModelRef = useRef<AuthViewModel>(new AuthViewModel());
+  const authViewModelRef = useRef<AuthViewModel>();
+  
+  // Initialize AuthViewModel only once
+  if (!authViewModelRef.current) {
+    console.log('AuthProvider: Creating new AuthViewModel instance');
+    authViewModelRef.current = new AuthViewModel();
+  }
   
   const authViewModel = authViewModelRef.current;
-
+  
   const [state, setState] = useState<AuthState>(() => {
     return authViewModel.getState();
   });
 
   useEffect(() => {
     console.log('AuthProvider: useEffect running - setting up subscription');
-    console.log('AuthProvider: Setting up ViewModel subscription');
-    const unsubscribe = authViewModel.subscribe((newState: AuthState) => {
+    
+    const unsubscribe = authViewModel.subscribe((newState) => {
       console.log('AuthProvider: Received state from ViewModel:', {
-        hasUser: !!newState.user,
-        userId: newState.user?.id || 'None',
-        loading: newState.loading,
-        initialized: newState.initialized,
-        error: newState.error || 'None'
-      });
-      
-      console.log('AuthProvider: Setting React state to:', {
         hasUser: !!newState.user,
         userId: newState.user?.id || 'None',
         loading: newState.loading,
@@ -57,22 +56,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Log the state immediately after setting it
       setTimeout(() => {
         console.log('AuthProvider: React state after setState:', {
-          hasUser: !!state.user,
-          userId: state.user?.id || 'None',
-          loading: state.loading,
-          initialized: state.initialized
+          hasUser: !!newState.user,
+          userId: newState.user?.id || 'None',
+          loading: newState.loading,
+          initialized: newState.initialized
         });
       }, 0);
     });
 
     console.log('AuthProvider: Subscription setup complete');
+    
     return () => {
-      console.log('AuthProvider: Cleaning up');
+      console.log('AuthProvider: Cleaning up subscription only');
       unsubscribe();
-      // Don't destroy the AuthViewModel on cleanup, only on component unmount
+      // Don't destroy the AuthViewModel - keep it alive for the app lifetime
     };
-  }, [authViewModel]);
-  
+  }, []); // Empty dependency array - only run once
+
   const value = {
     state,
     signIn: authViewModel.signIn.bind(authViewModel),
