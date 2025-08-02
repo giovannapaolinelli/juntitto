@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user, login, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,18 +15,31 @@ const LoginPage = () => {
     password: ''
   });
 
+  // Redirect if already logged in
+  if (user && !authLoading) {
+    return <Navigate to="/dashboard" replace />;
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      console.log('Attempting login...');
       await login(formData.email, formData.password);
+      
+      console.log('Login completed, showing success message');
       addToast({
         type: 'success',
         title: 'Login realizado com sucesso!',
         message: 'Bem-vindo de volta ao Juntitto'
       });
-      navigate('/dashboard');
+      
+      console.log('Redirecting to dashboard...');
+      // Small delay to ensure user state is updated
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
+      
     } catch (error: any) {
       console.error('Login error:', error);
       addToast({

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 
 const SignupPage = () => {
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { user, signup, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,6 +17,10 @@ const SignupPage = () => {
     confirmPassword: ''
   });
 
+  // Redirect if already logged in
+  if (user && !authLoading) {
+    return <Navigate to="/dashboard" replace />;
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -41,17 +45,21 @@ const SignupPage = () => {
     setLoading(true);
 
     try {
+      console.log('Attempting signup...');
       await signup(formData.email, formData.password, formData.name);
+      
+      console.log('Signup completed, showing success message');
       addToast({
         type: 'success',
         title: 'Conta criada com sucesso!',
-        message: 'Bem-vindo ao VowPlay! Redirecionando...'
+        message: 'Bem-vindo ao Juntitto! Redirecionando...'
       });
       
-      // Wait a moment for the user profile to be created, then redirect
+      console.log('Redirecting to dashboard...');
+      // Small delay to ensure user state is updated
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
+        navigate('/dashboard', { replace: true });
+      }, 1000);
       
     } catch (error: any) {
       console.error('Signup error:', error);
