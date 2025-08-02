@@ -271,13 +271,15 @@ export class AuthService {
       };
 
       console.log('AuthService: Creating user profile:', userData);
-      
       console.log('AuthService: Executing user creation query...');
+      
       const { data, error } = await supabase
         .from('users')
         .insert(userData)
         .select()
         .single();
+
+      console.log('AuthService: User creation completed with:', { hasData: !!data, error: error?.message || 'None' });
 
       console.log('AuthService: User creation query completed:', {
         hasData: !!data,
@@ -288,6 +290,7 @@ export class AuthService {
 
       if (error) {
         // If user already exists, try to fetch it instead
+        console.log('AuthService: User creation failed, checking if user exists...');
         if (error.code === '23505') {
           console.log('AuthService: User already exists, fetching existing profile...');
           return this.getUserProfileDirect(authUser.id);
@@ -353,6 +356,7 @@ export class AuthService {
   private async getUserProfileWithSession(userId: string, session: any): Promise<User | null> {
     try {
       console.log('AuthService: Getting user profile with session context for:', userId);
+      console.log('AuthService: Session details:', { hasAccessToken: !!session?.access_token, expiresAt: session?.expires_at });
       
       console.log('AuthService: Executing database query...');
       const { data, error } = await supabase
@@ -360,6 +364,8 @@ export class AuthService {
         .select('*')
         .eq('id', userId)
         .single();
+
+      console.log('AuthService: Database query completed with:', { hasData: !!data, error: error?.message || 'None' });
 
       console.log('AuthService: Database query completed:', {
         hasData: !!data,
@@ -369,6 +375,7 @@ export class AuthService {
       });
 
       if (error) {
+        console.log('AuthService: Database error details:', error);
         if (error.code === 'PGRST116') {
           console.log('AuthService: User profile not found in database, will need to create one');
           return null;
@@ -397,11 +404,15 @@ export class AuthService {
     try {
       console.log('AuthService: Getting user profile directly for:', userId);
       
+      console.log('AuthService: Executing direct database query...');
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
+
+      console.log('AuthService: Direct query completed with:', { hasData: !!data, error: error?.message || 'None' });
 
       if (error || !data) return null;
       return data;
