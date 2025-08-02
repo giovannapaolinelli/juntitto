@@ -260,6 +260,7 @@ export class AuthViewModel {
   subscribe(listener: (state: AuthState) => void): () => void {
     this.listeners.add(listener);
     console.log('AuthViewModel: New listener subscribed, total listeners:', this.listeners.size);
+    console.log('AuthViewModel: Immediately calling new listener with current state:', this.getState());
     
     // Immediately call with current state
     listener(this.getState());
@@ -277,6 +278,7 @@ export class AuthViewModel {
   private updateState(newState: Partial<AuthState>): void {
     this.state = { ...this.state, ...newState };
     console.log('AuthViewModel: State updated:', this.state);
+    console.log('AuthViewModel: Notifying', this.listeners.size, 'listeners of state change');
     console.log('AuthViewModel: Notifying', this.listeners.size, 'listeners');
     
     // Notify all listeners

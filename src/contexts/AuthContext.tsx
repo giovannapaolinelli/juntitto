@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     console.log('AuthProvider: Setting up ViewModel subscription');
+    
     const unsubscribe = authViewModel.subscribe((newState) => {
       console.log('AuthProvider: Received state from ViewModel:', {
         hasUser: !!newState.user,
@@ -40,21 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initialized: newState.initialized,
         error: newState.error || 'None'
       });
-      console.log('AuthProvider: Received state from ViewModel:', {
-        hasUser: !!newState.user,
-        userId: newState.user?.id || 'None',
-        loading: newState.loading,
-        initialized: newState.initialized,
-        error: newState.error || 'None'
-      });
-      console.log('AuthProvider: State updated from ViewModel:', {
-        hasUser: !!newState.user,
-        userId: newState.user?.id || 'None',
-        loading: newState.loading,
-        initialized: newState.initialized,
-        error: newState.error || 'None',
-        timestamp: new Date().toISOString()
-      });
+      
       console.log('AuthProvider: Setting React state to:', {
         hasUser: !!newState.user,
         userId: newState.user?.id || 'None',
@@ -62,13 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initialized: newState.initialized,
         error: newState.error || 'None'
       });
-      console.log('AuthProvider: Setting React state to:', {
-        hasUser: !!newState.user,
-        userId: newState.user?.id || 'None',
-        loading: newState.loading,
-        initialized: newState.initialized,
-        error: newState.error || 'None'
-      });
+      
       setState(newState);
       
       // Log the state immediately after setting it
@@ -87,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribe();
       authViewModel.destroy();
     };
-  }, [authViewModel]); // Remove state.user dependency to prevent subscription recreation
+  }, [authViewModel]);
   
   const value = {
     state,
