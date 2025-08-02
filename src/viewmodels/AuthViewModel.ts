@@ -28,21 +28,25 @@ export class AuthViewModel {
   private async initialize(): Promise<void> {
     console.log('AuthViewModel: Initializing...');
     
-    // Set timeout to prevent infinite loading (increased to 5 seconds)
+    // Set timeout to prevent infinite loading
     const initTimeout = setTimeout(() => {
-      console.warn('AuthViewModel: Initialization timeout, marking as initialized');
+      console.warn('AuthViewModel: Initialization timeout after 5 seconds, marking as initialized');
       this.updateState({
         user: null,
         loading: false,
         initialized: true,
-        error: null // Don't show error for timeout, just mark as initialized
+        error: null
       });
     }, 5000);
 
     try {
       // Set up auth state change listener
       this.authStateUnsubscribe = this.authService.onAuthStateChange((user) => {
-        console.log('AuthViewModel: Auth state changed, user:', user?.id || 'No user');
+        console.log('AuthViewModel: Auth state changed:', {
+          userId: user?.id || 'No user',
+          userEmail: user?.email || 'No email',
+          timestamp: new Date().toISOString()
+        });
         clearTimeout(initTimeout);
         this.updateState({
           user,
@@ -55,6 +59,14 @@ export class AuthViewModel {
       // Get initial session
       const { session, error } = await this.authService.getCurrentSession();
       
+      console.log('AuthViewModel: Initial session check:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        hasAccessToken: !!session?.access_token,
+        expiresAt: session?.expires_at,
+        error: error?.message || 'None'
+      });
+      
       if (error) {
         console.error('AuthViewModel: Failed to get initial session:', error);
         clearTimeout(initTimeout);
@@ -62,7 +74,7 @@ export class AuthViewModel {
           user: null,
           loading: false,
           initialized: true,
-          error: null // Don't show session errors on initial load
+          error: null
         });
         return;
       }
@@ -79,7 +91,10 @@ export class AuthViewModel {
         });
       }
 
-      // If session exists, the auth state change listener will handle it
+      // If session exists, verify it's complete and valid
+      if (session && session.user) {
+        console.log('AuthViewModel: Valid session found, waiting for auth state change listener');
+      }
 
     } catch (error) {
       console.error('AuthViewModel: Initialization error:', error);
@@ -88,7 +103,7 @@ export class AuthViewModel {
         user: null,
         loading: false,
         initialized: true,
-        error: null // Don't show initialization errors to users
+        error: null
       });
     }
   }
@@ -102,9 +117,15 @@ export class AuthViewModel {
     this.updateState({ ...this.state, loading: true, error: null });
 
     try {
-      // Step 1: Proper await implementation with diagnostic logging
       const { user, error } = await this.authService.signIn(credentials);
-      console.log('AuthViewModel: Supabase response - User:', user?.id || 'None', 'Error:', error?.message || 'None');
+      
+      console.log('AuthViewModel: Sign in response:', {
+        success: !!user,
+        userId: user?.id || 'None',
+        userEmail: user?.email || 'None',
+        error: error?.message || 'None',
+        timestamp: new Date().toISOString()
+      });
 
       if (error) {
         console.error('AuthViewModel: Sign in failed:', error);
@@ -116,10 +137,8 @@ export class AuthViewModel {
         return { success: false, error: error.message };
       }
 
-      // Step 2: Session validation before success
       if (user) {
-        console.log('AuthViewModel: Valid user received, updating state...');
-        // Auth state change listener will update the state
+        console.log('AuthViewModel: Valid user received, auth state change listener will update state');
         this.updateState({
           ...this.state,
           loading: false,

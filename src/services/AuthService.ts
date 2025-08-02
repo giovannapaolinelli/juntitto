@@ -21,18 +21,27 @@ export class AuthService {
     try {
       console.log('AuthService: Attempting sign in for:', credentials.email);
       
-      // Step 1: Proper await with diagnostic logging
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password
       });
 
-      // Step 2: Comprehensive session logging
-      console.log('AuthService: Supabase raw response:', {
-        session: data.session ? 'Present' : 'Missing',
-        user: data.user ? data.user.id : 'Missing',
-        accessToken: data.session?.access_token ? 'Present' : 'Missing',
-        refreshToken: data.session?.refresh_token ? 'Present' : 'Missing',
+      // Enhanced authentication data logging
+      console.log('AuthService: Complete Supabase response:', {
+        session: data.session ? {
+          access_token: data.session.access_token ? 'Present' : 'Missing',
+          refresh_token: data.session.refresh_token ? 'Present' : 'Missing',
+          expires_at: data.session.expires_at,
+          expires_in: data.session.expires_in,
+          token_type: data.session.token_type,
+          user_id: data.session.user?.id
+        } : 'Missing',
+        user: data.user ? {
+          id: data.user.id,
+          email: data.user.email,
+          email_confirmed_at: data.user.email_confirmed_at,
+          user_metadata: data.user.user_metadata
+        } : 'Missing',
         error: error?.message || 'None'
       });
 
@@ -44,11 +53,13 @@ export class AuthService {
         };
       }
 
-      // Step 3: Enhanced session validation
+      // Comprehensive session validation
       if (!data.user || !data.session) {
         console.error('AuthService: Incomplete authentication data:', {
           hasUser: !!data.user,
-          hasSession: !!data.session
+          hasSession: !!data.session,
+          hasAccessToken: !!data.session?.access_token,
+          hasRefreshToken: !!data.session?.refresh_token
         });
         return {
           user: null,
@@ -56,6 +67,17 @@ export class AuthService {
         };
       }
 
+      // Verify all required authentication data is present
+      if (!data.session.access_token || !data.session.refresh_token) {
+        console.error('AuthService: Missing required tokens:', {
+          hasAccessToken: !!data.session.access_token,
+          hasRefreshToken: !!data.session.refresh_token
+        });
+        return {
+          user: null,
+          error: { code: 'MISSING_TOKENS', message: 'Authentication tokens missing' }
+        };
+      }
       console.log('AuthService: Sign in successful for user:', data.user.id);
       
       // Get user profile from our users table

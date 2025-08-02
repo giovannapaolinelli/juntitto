@@ -17,15 +17,24 @@ const Dashboard = () => {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
 
-  // Step 5: Dashboard component mount debugging
+  // Dashboard component mount and auth state debugging
   useEffect(() => {
-    console.log('Dashboard: Component mounted with auth state:', {
+    console.log('Dashboard: Component mounted/updated with auth state:', {
       isAuthenticated,
       isLoading,
       userId: state.user?.id || 'None',
-      initialized: state.initialized
+      userEmail: state.user?.email || 'None',
+      initialized: state.initialized,
+      timestamp: new Date().toISOString()
     });
   }, [isAuthenticated, isLoading, state.user, state.initialized]);
+
+  // Additional logging for quiz data loading
+  useEffect(() => {
+    if (state.user?.id) {
+      console.log('Dashboard: Loading quizzes for user:', state.user.id);
+    }
+  }, [state.user?.id]);
 
   const [currentPlan] = useState({
     name: "Gratuito",
@@ -37,6 +46,7 @@ const Dashboard = () => {
 
   // Show loading while checking authentication
   if (isLoading) {
+    console.log('Dashboard: Showing loading state due to auth check');
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -49,8 +59,11 @@ const Dashboard = () => {
 
   // This should not happen due to ProtectedRoute, but adding as safeguard
   if (!isAuthenticated) {
+    console.warn('Dashboard: User not authenticated, this should not happen with ProtectedRoute');
     return null; // ProtectedRoute will handle redirect
   }
+
+  console.log('Dashboard: Rendering dashboard for authenticated user:', state.user?.id);
 
   const copyQuizLink = (slug: string) => {
     const url = `${window.location.origin}/play/${slug}`;

@@ -16,16 +16,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { state, canAccessRoute } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute: Checking access for path:', location.pathname);
-  console.log('ProtectedRoute: Auth state:', {
-    user: state.user?.id || 'No user',
+  console.log('ProtectedRoute: Access check for:', location.pathname, {
+    hasUser: !!state.user,
+    userId: state.user?.id || 'None',
     loading: state.loading,
-    initialized: state.initialized
+    initialized: state.initialized,
+    timestamp: new Date().toISOString()
   });
 
   // Show loading while auth is initializing
   if (!state.initialized || state.loading) {
-    console.log('ProtectedRoute: Showing loading state - initialized:', state.initialized, 'loading:', state.loading);
+    console.log('ProtectedRoute: Showing loading state:', {
+      initialized: state.initialized,
+      loading: state.loading,
+      reason: !state.initialized ? 'Not initialized' : 'Loading'
+    });
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -38,18 +43,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Step 5: Enhanced dashboard component debugging
-  console.log('ProtectedRoute: Auth state check - User:', state.user?.id || 'None', 'Path:', location.pathname);
-
   // Check if user is authenticated
   if (!state.user) {
-    console.log('ProtectedRoute: User not authenticated, redirecting to login');
+    console.log('ProtectedRoute: User not authenticated, redirecting to login from:', location.pathname);
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check ownership if required
   if (requireOwnership && resourceOwnerId && state.user.id !== resourceOwnerId) {
-    console.log('ProtectedRoute: User not owner of resource, redirecting to dashboard');
+    console.log('ProtectedRoute: User not owner of resource:', resourceOwnerId, 'redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -57,11 +59,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const accessResult = canAccessRoute(location.pathname);
   
   if (!accessResult.allowed && accessResult.redirectTo) {
-    console.log('ProtectedRoute: Access denied, redirecting to:', accessResult.redirectTo);
+    console.log('ProtectedRoute: Access denied for:', location.pathname, 'redirecting to:', accessResult.redirectTo);
     return <Navigate to={accessResult.redirectTo} state={{ from: location }} replace />;
   }
 
-  console.log('ProtectedRoute: Access granted, rendering protected content');
+  console.log('ProtectedRoute: Access granted for:', location.pathname, 'user:', state.user.id);
   return <>{children}</>;
 };
 

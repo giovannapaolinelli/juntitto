@@ -41,36 +41,37 @@ const LoginPage = () => {
     try {
       console.log('LoginPage: Attempting login...');
       
-      // Step 1: Execute login with proper await
       const result = await signIn({
         email: formData.email,
         password: formData.password
       });
       
-      // Step 2: Add diagnostic logging
-      console.log('LoginPage: Login result:', result);
+      console.log('LoginPage: Login attempt result:', {
+        success: result.success,
+        error: result.error || 'None',
+        timestamp: new Date().toISOString()
+      });
       
       if (result.success) {
-        console.log('LoginPage: Login successful, checking session...');
+        console.log('LoginPage: Login successful, auth state will handle redirect');
         
-        // Step 3: Verify session exists before proceeding
-        if (state.user) {
-          console.log('LoginPage: User authenticated, initiating redirect...');
-          
-          // Step 4: Implement React Router navigation
-          const redirectTo = location.state?.from?.pathname || '/dashboard';
-          console.log('LoginPage: Redirecting to:', redirectTo);
-          
-          navigate(redirectTo, { replace: true });
-        } else {
-          console.warn('LoginPage: Login successful but no user in state yet, waiting for auth state change...');
-        }
+        // Let AuthContext handle the redirect automatically
+        // This prevents race conditions with state updates
         
         addToast({
           type: 'success',
           title: 'Login realizado com sucesso!',
           message: 'Bem-vindo de volta ao Juntitto'
         });
+        
+        // Additional fallback redirect if AuthContext doesn't handle it
+        setTimeout(() => {
+          if (window.location.pathname === '/login') {
+            console.log('LoginPage: Fallback redirect triggered');
+            const redirectTo = location.state?.from?.pathname || '/dashboard';
+            navigate(redirectTo, { replace: true });
+          }
+        }, 500);
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({

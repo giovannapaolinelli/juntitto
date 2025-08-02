@@ -33,25 +33,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('AuthProvider: Setting up ViewModel subscription');
     const unsubscribe = authViewModel.subscribe((newState) => {
-      console.log('AuthProvider: State updated from ViewModel:', newState);
+      console.log('AuthProvider: State updated from ViewModel:', {
+        hasUser: !!newState.user,
+        userId: newState.user?.id || 'None',
+        loading: newState.loading,
+        initialized: newState.initialized,
+        error: newState.error || 'None',
+        timestamp: new Date().toISOString()
+      });
       setState(newState);
       
-      // Step 4: Enhanced auth state change handling
+      // Enhanced auth state change handling for post-login redirect
       if (newState.initialized && newState.user && !state.user) {
-        console.log('AuthProvider: User just became authenticated, checking for redirect needs');
+        console.log('AuthProvider: User authentication detected, checking for redirect needs');
         
         // Check if we're on an auth page and should redirect
         const currentPath = window.location.pathname;
         const authPages = ['/login', '/signup'];
         
         if (authPages.includes(currentPath)) {
-          console.log('AuthProvider: User authenticated on auth page, triggering redirect');
+          console.log('AuthProvider: User authenticated on auth page, initiating redirect to dashboard');
           
-          // Small delay to ensure React state is fully updated
+          // Ensure React state is fully propagated before navigation
           setTimeout(() => {
-            const redirectTo = '/dashboard'; // Could be enhanced to use stored intended destination
-            console.log('AuthProvider: Executing redirect to:', redirectTo);
-            window.location.href = redirectTo; // Fallback navigation method
+            const redirectTo = '/dashboard';
+            console.log('AuthProvider: Executing redirect to:', redirectTo, 'at', new Date().toISOString());
+            
+            // Primary navigation method
+            try {
+              window.history.pushState({}, '', redirectTo);
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            } catch (error) {
+              console.warn('AuthProvider: History API failed, using location.href fallback');
+              window.location.href = redirectTo;
+            }
           }, 100);
         }
       }
@@ -62,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribe();
       authViewModel.destroy();
     };
-  }, [authViewModel]);
+  }, [authViewModel, state.user]); // Added state.user dependency for proper comparison
   const value = {
     state,
     signIn: authViewModel.signIn.bind(authViewModel),
