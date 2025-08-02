@@ -23,12 +23,24 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [authViewModel] = useState(() => new AuthViewModel());
-  const [state, setState] = useState<AuthState>(authViewModel.getState());
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    loading: true,
+    initialized: false,
+    error: null
+  });
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up subscription');
-    const unsubscribe = authViewModel.subscribe((newState: AuthState) => {
-      console.log('AuthProvider: State updated', newState);
+    console.log('AuthProvider: Setting up ViewModel subscription');
+    const unsubscribe = authViewModel.subscribe((newState) => {
+      console.log('AuthProvider: State updated from ViewModel:', {
+        hasUser: !!newState.user,
+        userId: newState.user?.id || 'None',
+        loading: newState.loading,
+        initialized: newState.initialized,
+        error: newState.error || 'None',
+        timestamp: new Date().toISOString()
+      });
       setState(newState);
     });
 
@@ -53,3 +65,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+
