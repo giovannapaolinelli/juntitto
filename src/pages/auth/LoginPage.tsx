@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,13 +12,33 @@ const LoginPage = () => {
   const { isAuthenticated } = useAuthRedirect();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initTimeout, setInitTimeout] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
+  // Add timeout for initialization to prevent infinite loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!state.initialized) {
+        console.warn('LoginPage: Auth initialization timeout after 10 seconds');
+        setInitTimeout(true);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timer);
+  }, [state.initialized]);
+
+  // Reset timeout when initialization completes
+  useEffect(() => {
+    if (state.initialized && initTimeout) {
+      setInitTimeout(false);
+    }
+  }, [state.initialized, initTimeout]);
+
   // Show loading while auth is initializing
-  if (!state.initialized) {
+  if (!state.initialized && !initTimeout) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -28,6 +49,38 @@ const LoginPage = () => {
     );
   }
 
+  // Show error state if initialization times out
+  if (!state.initialized && initTimeout) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Problema de Conexão</h2>
+          <p className="text-gray-600 mb-6">
+            Não foi possível inicializar a autenticação. Verifique sua conexão com a internet.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-shadow"
+            >
+              Tentar Novamente
+            </button>
+            <Link
+              to="/"
+              className="block w-full text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              ← Voltar para o início
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
   // Redirect if already logged in (handled by useAuthRedirect)
   if (isAuthenticated) {
     console.log('LoginPage: User already authenticated, redirecting to dashboard');
