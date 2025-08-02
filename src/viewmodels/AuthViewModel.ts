@@ -10,6 +10,7 @@ export class AuthViewModel {
   private authStateUnsubscribe: { data: { subscription: { unsubscribe: () => void } } } | null = null;
 
   constructor() {
+    console.log('AuthViewModel: Constructor called');
     this.authService = AuthService.getInstance();
     this.routeGuardService = RouteGuardService.getInstance();
     this.state = {
@@ -19,6 +20,7 @@ export class AuthViewModel {
       error: null
     };
 
+    console.log('AuthViewModel: Calling initialize()');
     this.initialize();
   }
 

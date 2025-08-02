@@ -22,6 +22,8 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  console.log('AuthProvider: Component rendering/mounting');
+  
   const [authViewModel] = useState(() => new AuthViewModel());
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -31,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
+    console.log('AuthProvider: useEffect running - setting up subscription');
     console.log('AuthProvider: Setting up ViewModel subscription');
     
     const unsubscribe = authViewModel.subscribe((newState) => {
