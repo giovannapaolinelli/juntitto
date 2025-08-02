@@ -9,8 +9,11 @@ interface AuthContextType {
   signOut: () => Promise<{ success: boolean; error?: string }>;
   canAccessRoute: (path: string) => { allowed: boolean; redirectTo?: string };
   clearError: () => void;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
   const authViewModelRef = useRef<AuthViewModel>(new AuthViewModel());
   return context;
 };
