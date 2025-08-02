@@ -275,6 +275,7 @@ export class AuthService {
       console.log('AuthService: Auth state changed:', event, session?.user?.id || 'No user');
       
       if (session?.user) {
+        console.log('AuthService: Session found, getting user profile for:', session.user.id);
         // Get or create user profile
         let userProfile = await this.getUserProfile(session.user.id);
         
@@ -283,8 +284,10 @@ export class AuthService {
           userProfile = await this.createUserProfile(session.user);
         }
         
+        console.log('AuthService: Calling callback with user profile:', userProfile?.id || 'No profile');
         callback(userProfile);
       } else {
+        console.log('AuthService: No session, calling callback with null');
         callback(null);
       }
     });
