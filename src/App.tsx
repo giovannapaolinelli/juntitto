@@ -31,6 +31,7 @@ import Footer from './components/layout/Footer';
 
 function App() {
   console.log('App: Rendering application');
+  console.log('App: About to render AuthProvider');
   
   return (
     <ThemeProvider>

@@ -22,6 +22,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  console.log('AuthProvider: Component function called');
   console.log('AuthProvider: Component rendering/mounting');
   
   const [authViewModel] = useState(() => new AuthViewModel());
