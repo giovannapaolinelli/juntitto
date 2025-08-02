@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
+import { useToast } '../../contexts/ToastContext';
 import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 const LoginPage = () => {
@@ -39,11 +39,13 @@ const LoginPage = () => {
 
   // Handle redirect after successful authentication
   useEffect(() => {
-    if (state.initialized && state.user && !isSubmitting) {
-      console.log('LoginPage: User authenticated after login, redirecting to dashboard');
+    // Only redirect if user is authenticated, auth state is initialized, and we are not currently submitting the form
+    // The `isAuthenticated` from useAuthRedirect already checks for state.user and state.initialized
+    if (isAuthenticated && !isSubmitting) {
+      console.log('LoginPage: User authenticated, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
-  }, [state.initialized, state.user, isSubmitting, navigate]);
+  }, [isAuthenticated, isSubmitting, navigate]);
 
   // Show loading while auth is initializing
   if (!state.initialized && !initTimeout) {
@@ -90,6 +92,8 @@ const LoginPage = () => {
     );
   }
   // Redirect if already logged in (handled by useAuthRedirect)
+  // This check is redundant with the useEffect above if isAuthenticated is reliable
+  // but kept for immediate navigation on initial render if already authenticated.
   if (isAuthenticated) {
     console.log('LoginPage: User already authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
@@ -116,7 +120,7 @@ const LoginPage = () => {
           title: 'Login realizado com sucesso!',
           message: 'Bem-vindo de volta ao Juntitto'
         });
-        // Navigation will be handled by the useEffect above
+        // Navigation will be handled by the useEffect above or useAuthRedirect
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({
@@ -127,7 +131,6 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error('LoginPage: Unexpected login error in handleSubmit:', error); // NOVO LOG
-      console.error('LoginPage: Unexpected login error:', error);
       addToast({
         type: 'error',
         title: 'Erro no login',
@@ -228,7 +231,7 @@ const LoginPage = () => {
               disabled={isSubmitting || state.loading}
               className="w-full bg-gradient-to-r from-rose-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {isSubmitting ? 'TESTEEEEo...' : 'Entrar'}
+              {isSubmitting ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
 
