@@ -7,7 +7,7 @@ export class AuthViewModel {
   private routeGuardService: RouteGuardService;
   private state: AuthState;
   private listeners: Set<(state: AuthState) => void> = new Set();
-  private authStateUnsubscribe: (() => void) | null = null;
+  private authStateUnsubscribe: { data: { subscription: { unsubscribe: () => void } } } | null = null;
 
   constructor() {
     this.authService = AuthService.getInstance();
@@ -264,7 +264,7 @@ export class AuthViewModel {
     console.log('AuthViewModel: Destroying...');
     
     if (this.authStateUnsubscribe) {
-      this.authStateUnsubscribe();
+      this.authStateUnsubscribe.data.subscription.unsubscribe();
       this.authStateUnsubscribe = null;
     }
     
