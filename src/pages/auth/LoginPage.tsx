@@ -58,6 +58,7 @@ const LoginPage = () => {
           message: result.error || 'Email ou senha incorretos'
         });
       }
+      )
       
     } catch (error) {
       console.error('LoginPage: Unexpected login error in handleSubmit:', error); // NOVO LOG
