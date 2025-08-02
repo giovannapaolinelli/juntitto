@@ -7,7 +7,7 @@ const DemoPage = () => {
   const { quiz, state, getCurrentQuestion, startTimer, answerQuestion, resetQuiz } = useDemoQuizViewModel();
 
   useEffect(() => {
-    if (!state.completed && !state.showResult) {
+    if (!state.completed) {
       startTimer();
     }
   }, [state.currentQuestion, state.showResult, state.completed]);
@@ -86,7 +86,6 @@ const DemoPage = () => {
   }
 
   const currentQuestion = getCurrentQuestion();
-  const isCorrect = state.showResult && state.answers[state.currentQuestion] === currentQuestion.correctAnswer;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
@@ -143,36 +142,15 @@ const DemoPage = () => {
           
           <div className="grid gap-4 max-w-2xl mx-auto">
             {currentQuestion.options.map((option, index) => {
-              let buttonClass = "w-full p-4 md:p-6 text-left border-2 rounded-xl transition-all duration-200 text-lg ";
-              
-              if (state.showResult) {
-                if (index === currentQuestion.correctAnswer) {
-                  buttonClass += "border-green-500 bg-green-50 text-green-800";
-                } else if (index === state.answers[state.currentQuestion] && index !== currentQuestion.correctAnswer) {
-                  buttonClass += "border-red-500 bg-red-50 text-red-800";
-                } else {
-                  buttonClass += "border-gray-200 bg-gray-50 text-gray-500";
-                }
-              } else {
-                buttonClass += "border-gray-200 hover:border-rose-300 hover:bg-rose-50 cursor-pointer transform hover:scale-105 active:scale-95";
-              }
+              const buttonClass = "w-full p-4 md:p-6 text-left border-2 rounded-xl transition-all duration-200 text-lg border-gray-200 hover:border-rose-300 hover:bg-rose-50 cursor-pointer transform hover:scale-105 active:scale-95";
               
               return (
                 <button
                   key={index}
-                  onClick={() => !state.showResult && answerQuestion(index)}
-                  disabled={state.showResult}
+                  onClick={() => answerQuestion(index)}
                   className={buttonClass}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{option}</span>
-                    {state.showResult && index === currentQuestion.correctAnswer && (
-                      <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
-                    )}
-                    {state.showResult && index === state.answers[state.currentQuestion] && index !== currentQuestion.correctAnswer && (
-                      <XCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                    )}
-                  </div>
+                  <span>{option}</span>
                 </button>
               );
             })}
@@ -180,21 +158,7 @@ const DemoPage = () => {
           
           {state.showResult && (
             <div className="mt-8 text-center">
-              <div className={`inline-flex items-center space-x-2 px-6 py-3 rounded-full text-lg font-semibold ${
-                isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {isCorrect ? (
-                  <>
-                    <CheckCircle className="w-6 h-6" />
-                    <span>Correto!</span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="w-6 h-6" />
-                    <span>Incorreto!</span>
-                  </>
-                )}
-              </div>
+              <div className="text-gray-600">Resposta registrada!</div>
             </div>
           )}
         </div>
