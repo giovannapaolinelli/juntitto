@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { AuthViewModel } from '../viewmodels/AuthViewModel';
 import { AuthState, LoginCredentials, SignupCredentials } from '../types/auth';
 
@@ -25,15 +25,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   console.log('AuthProvider: Component function called');
   console.log('AuthProvider: Component rendering/mounting');
   
-  const [authViewModel] = useState(() => new AuthViewModel());
+  // Use useRef to ensure AuthViewModel instance is stable across re-renders
+  const authViewModelRef = useRef<AuthViewModel | null>(null);
+  
+  if (!authViewModelRef.current) {
   const [state, setState] = useState<AuthState>({
     user: null,
     loading: true,
     initialized: false,
-    error: null
-  });
+    authViewModelRef.current = new AuthViewModel();
+  }
+  
+  const authViewModel = authViewModelRef.current;
 
   useEffect(() => {
+    console.log('AuthProvider: useEffect running - setting up subscription');
     console.log('AuthProvider: useEffect running - setting up subscription');
     console.log('AuthProvider: Setting up ViewModel subscription');
     
@@ -70,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       console.log('AuthProvider: Cleaning up');
       unsubscribe();
-      authViewModel.destroy();
+      authViewModelRef.current?.destroy();
     };
   }, [authViewModel]);
   
