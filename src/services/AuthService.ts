@@ -271,12 +271,27 @@ export class AuthService {
       };
 
       console.log('AuthService: Creating user profile:', userData);
-
-      const { data, error } = await supabase
+      
+      // Create a promise with timeout to prevent hanging
+      const insertPromise = supabase
         .from('users')
         .insert(userData)
         .select()
         .single();
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('User creation timeout')), 10000);
+      });
+
+      console.log('AuthService: Executing user creation query with timeout...');
+      const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any;
+
+      console.log('AuthService: User creation query completed:', {
+        hasData: !!data,
+        userData: data,
+        error: error?.message || 'None',
+        errorCode: error?.code || 'None'
+      });
 
       if (error) {
         console.error('AuthService: Create user profile error:', error);
@@ -308,6 +323,20 @@ export class AuthService {
         if (!userProfile) {
           console.log('AuthService: No user profile found, creating one...');
           userProfile = await this.createUserProfile(session.user);
+          
+          // If user creation also fails, create a minimal user object from auth data
+          if (!userProfile) {
+            console.log('AuthService: User creation failed, using fallback user object');
+            userProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              plan: 'free' as const,
+              stripe_customer_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+          }
         }
         
         console.log('AuthService: Calling callback with user profile:', userProfile?.id || 'No profile');
