@@ -80,15 +80,8 @@ export class AuthService {
       }
       console.log('AuthService: Sign in successful for user:', data.user.id);
       
-      // Get user profile from our users table
-      const userProfile = await this.getUserProfile(data.user.id);
-      
-      if (!userProfile) {
-        console.warn('AuthService: No user profile found, but authentication succeeded');
-      }
-      
       return {
-        user: userProfile,
+        user: null, // User will be set by onAuthStateChange callback
         error: null
       };
 
