@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Play, Settings, BarChart3, Users, Calendar, Copy, QrCode, MoreVertical } from 'lucide-react';
 import { useQuizViewModel } from '../../viewmodels/QuizViewModel';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 import { useToast } from '../../contexts/ToastContext';
 import { useTranslation } from 'react-i18next';
 import QRCodeModal from '../../components/quiz/QRCodeModal';
@@ -10,6 +11,7 @@ import QRCodeModal from '../../components/quiz/QRCodeModal';
 const Dashboard = () => {
   const { t } = useTranslation();
   const { state } = useAuth();
+  const { isAuthenticated, isLoading } = useAuthRedirect();
   const { addToast } = useToast();
   const { quizzes, loading } = useQuizViewModel(state.user?.id);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -22,6 +24,23 @@ const Dashboard = () => {
     maxQuizzes: 1,
     usedQuizzes: 1
   });
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // This should not happen due to ProtectedRoute, but adding as safeguard
+  if (!isAuthenticated) {
+    return null; // ProtectedRoute will handle redirect
+  }
 
   const copyQuizLink = (slug: string) => {
     const url = `${window.location.origin}/play/${slug}`;

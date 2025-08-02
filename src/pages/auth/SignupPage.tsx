@@ -3,11 +3,13 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { state, signUp } = useAuth();
   const { addToast } = useToast();
+  const { isAuthenticated } = useAuthRedirect();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,8 +31,8 @@ const SignupPage = () => {
     );
   }
 
-  // Redirect if already logged in
-  if (state.user) {
+  // Redirect if already logged in (handled by useAuthRedirect)
+  if (isAuthenticated) {
     console.log('SignupPage: User already authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }

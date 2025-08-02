@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { state, signIn } = useAuth();
   const { addToast } = useToast();
+  const { isAuthenticated } = useAuthRedirect();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-
-  // Get redirect path from location state or default to dashboard
-  const redirectTo = location.state?.from?.pathname || '/dashboard';
 
   // Show loading while auth is initializing
   if (!state.initialized) {
@@ -31,10 +28,10 @@ const LoginPage = () => {
     );
   }
 
-  // Redirect if already logged in
-  if (state.user) {
+  // Redirect if already logged in (handled by useAuthRedirect)
+  if (isAuthenticated) {
     console.log('LoginPage: User already authenticated, redirecting to dashboard');
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,11 +53,8 @@ const LoginPage = () => {
           message: 'Bem-vindo de volta ao Juntitto'
         });
         
-        console.log('LoginPage: Redirecting to:', redirectTo);
-        // Small delay to ensure state is updated before navigation
-        setTimeout(() => {
-          navigate(redirectTo, { replace: true });
-        }, 100);
+        console.log('LoginPage: Login successful, navigation will be handled by AuthContext');
+        // Navigation is now handled automatically by AuthContext when user state changes
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({

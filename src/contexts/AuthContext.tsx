@@ -36,19 +36,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthProvider: State updated from ViewModel:', newState);
       setState(newState);
       
-      // Handle automatic navigation after successful authentication
-      if (newState.initialized && newState.user && !newState.loading) {
-        const currentPath = window.location.pathname;
-        const authPages = ['/login', '/signup'];
-        
-        if (authPages.includes(currentPath)) {
-          console.log('AuthProvider: User authenticated on auth page, redirecting to dashboard');
-          // Use setTimeout to ensure state updates are complete
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 100);
-        }
-      }
     });
 
     return () => {
