@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link, useState } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Play, Heart, Users, Trophy, ArrowRight, Star, Check } from 'lucide-react';
 
 const LandingPage = () => {
