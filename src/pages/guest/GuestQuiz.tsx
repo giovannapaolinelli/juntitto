@@ -1,13 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { Heart, Clock, Trophy, Users, CheckCircle, XCircle } from 'lucide-react';
 import { useQuizzes } from '../../hooks/useQuizzes';
 import { useQuizResults } from '../../hooks/useQuizResults';
 
 const GuestQuiz = () => {
   const { slug } = useParams();
+  const location = useLocation();
   const { getQuizBySlug } = useQuizzes();
-  const quiz = getQuizBySlug(slug || '');
+  
+  // Handle demo mode
+  const isDemo = location.pathname === '/play/demo';
+  const demoQuiz = {
+    id: 'demo',
+    title: 'Quiz Demonstração - Nossa História',
+    slug: 'demo',
+    event_date: '2025-06-15',
+    status: 'active' as const,
+    theme: {
+      backgroundColor: '#fdf2f8'
+    },
+    questions: [
+      {
+        id: '1',
+        text: 'Onde João e Maria se conheceram?',
+        options: ['Na faculdade', 'No trabalho', 'Em uma festa', 'No shopping'],
+        correctAnswer: 0
+      },
+      {
+        id: '2', 
+        text: 'Qual foi o primeiro filme que assistiram juntos?',
+        options: ['Titanic', 'Vingadores', 'Harry Potter', 'Star Wars'],
+        correctAnswer: 2
+      },
+      {
+        id: '3',
+        text: 'Em que cidade fizeram a primeira viagem juntos?',
+        options: ['Paris', 'Nova York', 'Rio de Janeiro', 'Buenos Aires'],
+        correctAnswer: 2
+      }
+    ]
+  };
+  
+  const quiz = isDemo ? demoQuiz : getQuizBySlug(slug || '');
   const { submitResult, getLeaderboard } = useQuizResults(quiz?.id || '');
   
   const [currentStep, setCurrentStep] = useState('welcome'); // welcome, quiz, results
@@ -18,7 +53,11 @@ const GuestQuiz = () => {
   const [showResult, setShowResult] = useState(false);
   const [startTime, setStartTime] = useState<number>(0);
 
-  const leaderboard = getLeaderboard();
+  const leaderboard = isDemo ? [
+    { id: '1', guestName: 'Ana Silva', score: 100, timeSpent: 165, position: 1 },
+    { id: '2', guestName: 'Carlos Santos', score: 67, timeSpent: 192, position: 2 },
+    { id: '3', guestName: 'Lucia Oliveira', score: 33, timeSpent: 178, position: 3 }
+  ] : getLeaderboard();
 
   // Timer effect
   useEffect(() => {
@@ -32,7 +71,10 @@ const GuestQuiz = () => {
 
   if (!quiz) {
     return <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-600">Quiz não encontrado</p>
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Carregando quiz...</p>
+      </div>
     </div>;
   }
 
@@ -69,16 +111,19 @@ const GuestQuiz = () => {
     const totalTime = Math.round((Date.now() - startTime) / 1000);
     const score = calculateScore();
     
-    try {
-      await submitResult({
-        quizId: quiz.id,
-        guestName,
-        answers,
-        score,
-        timeSpent: totalTime
-      });
-    } catch (error) {
-      console.error('Error submitting result:', error);
+    // Only submit results for real quizzes, not demo
+    if (!isDemo) {
+      try {
+        await submitResult({
+          quizId: quiz.id,
+          guestName,
+          answers,
+          score,
+          timeSpent: totalTime
+        });
+      } catch (error) {
+        console.error('Error submitting result:', error);
+      }
     }
     
     setCurrentStep('results');

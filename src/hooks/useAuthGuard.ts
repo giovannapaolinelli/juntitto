@@ -16,14 +16,26 @@ export const useAuthGuard = () => {
       return;
     }
 
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (!state.initialized) {
+        console.warn('useAuthGuard: Auth initialization timeout');
+      }
+    }, 3000);
+
     console.log('useAuthGuard: Checking route access for:', location.pathname);
 
     const accessResult = canAccessRoute(location.pathname);
 
     if (!accessResult.allowed && accessResult.redirectTo) {
       console.log('useAuthGuard: Redirecting to:', accessResult.redirectTo);
-      navigate(accessResult.redirectTo, { replace: true });
+      navigate(accessResult.redirectTo, { 
+        replace: true,
+        state: { from: location }
+      });
     }
+
+    return () => clearTimeout(timeout);
   }, [state.initialized, state.user, location.pathname, canAccessRoute, navigate]);
 
   return {

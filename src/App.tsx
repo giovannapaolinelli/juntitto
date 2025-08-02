@@ -49,6 +49,7 @@ function App() {
                 
                 {/* Guest Quiz Route */}
                 <Route path="/play/:slug" element={<GuestQuiz />} />
+                <Route path="/play/demo" element={<GuestQuiz />} />
                 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={

@@ -28,10 +28,22 @@ export class AuthViewModel {
   private async initialize(): Promise<void> {
     console.log('AuthViewModel: Initializing...');
     
+    // Set timeout to prevent infinite loading
+    const initTimeout = setTimeout(() => {
+      console.warn('AuthViewModel: Initialization timeout, marking as initialized');
+      this.updateState({
+        user: null,
+        loading: false,
+        initialized: true,
+        error: 'Authentication initialization timeout'
+      });
+    }, 3000);
+
     try {
       // Set up auth state change listener
       this.authStateUnsubscribe = this.authService.onAuthStateChange((user) => {
         console.log('AuthViewModel: Auth state changed, user:', user?.id || 'No user');
+        clearTimeout(initTimeout);
         this.updateState({
           user,
           loading: false,
@@ -45,6 +57,7 @@ export class AuthViewModel {
       
       if (error) {
         console.error('AuthViewModel: Failed to get initial session:', error);
+        clearTimeout(initTimeout);
         this.updateState({
           user: null,
           loading: false,
@@ -57,6 +70,7 @@ export class AuthViewModel {
       // If no session, mark as initialized
       if (!session) {
         console.log('AuthViewModel: No initial session found');
+        clearTimeout(initTimeout);
         this.updateState({
           user: null,
           loading: false,
@@ -69,6 +83,7 @@ export class AuthViewModel {
 
     } catch (error) {
       console.error('AuthViewModel: Initialization error:', error);
+      clearTimeout(initTimeout);
       this.updateState({
         user: null,
         loading: false,

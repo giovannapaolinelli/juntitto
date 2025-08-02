@@ -4,9 +4,15 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireOwnership?: boolean;
+  resourceOwnerId?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requireOwnership = false, 
+  resourceOwnerId 
+}) => {
   const { state, canAccessRoute } = useAuth();
   const location = useLocation();
 
@@ -31,12 +37,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
+  // Check if user is authenticated
+  if (!state.user) {
+    console.log('ProtectedRoute: User not authenticated, redirecting to login');
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Check ownership if required
+  if (requireOwnership && resourceOwnerId && state.user.id !== resourceOwnerId) {
+    console.log('ProtectedRoute: User not owner of resource, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+
   // Check route access
   const accessResult = canAccessRoute(location.pathname);
   
   if (!accessResult.allowed && accessResult.redirectTo) {
     console.log('ProtectedRoute: Access denied, redirecting to:', accessResult.redirectTo);
-    return <Navigate to={accessResult.redirectTo} replace />;
+    return <Navigate to={accessResult.redirectTo} state={{ from: location }} replace />;
   }
 
   console.log('ProtectedRoute: Access granted, rendering protected content');

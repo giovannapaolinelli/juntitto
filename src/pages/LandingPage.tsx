@@ -53,10 +53,13 @@ const LandingPage = () => {
                 <Play className="w-5 h-5" />
                 <span>Criar Meu Quiz</span>
               </Link>
-              <button className="text-gray-700 hover:text-rose-600 transition-colors flex items-center space-x-2 px-8 py-4">
+              <Link 
+                to="/play/demo"
+                className="text-gray-700 hover:text-rose-600 transition-colors flex items-center space-x-2 px-8 py-4"
+              >
                 <span>Ver Demonstração</span>
                 <ArrowRight className="w-5 h-5" />
-              </button>
+              </Link>
             </div>
 
             {/* Social Proof */}
