@@ -21,9 +21,19 @@ export class AuthService {
     try {
       console.log('AuthService: Attempting sign in for:', credentials.email);
       
+      // Step 1: Proper await with diagnostic logging
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password
+      });
+
+      // Step 2: Comprehensive session logging
+      console.log('AuthService: Supabase raw response:', {
+        session: data.session ? 'Present' : 'Missing',
+        user: data.user ? data.user.id : 'Missing',
+        accessToken: data.session?.access_token ? 'Present' : 'Missing',
+        refreshToken: data.session?.refresh_token ? 'Present' : 'Missing',
+        error: error?.message || 'None'
       });
 
       if (error) {
@@ -34,11 +44,15 @@ export class AuthService {
         };
       }
 
-      if (!data.user) {
-        console.error('AuthService: No user returned from sign in');
+      // Step 3: Enhanced session validation
+      if (!data.user || !data.session) {
+        console.error('AuthService: Incomplete authentication data:', {
+          hasUser: !!data.user,
+          hasSession: !!data.session
+        });
         return {
           user: null,
-          error: { code: 'NO_USER', message: 'Authentication failed' }
+          error: { code: 'INCOMPLETE_AUTH', message: 'Authentication incomplete - missing session data' }
         };
       }
 
@@ -46,6 +60,10 @@ export class AuthService {
       
       // Get user profile from our users table
       const userProfile = await this.getUserProfile(data.user.id);
+      
+      if (!userProfile) {
+        console.warn('AuthService: No user profile found, but authentication succeeded');
+      }
       
       return {
         user: userProfile,

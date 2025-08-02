@@ -25,6 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Show loading while auth is initializing
   if (!state.initialized || state.loading) {
+    console.log('ProtectedRoute: Showing loading state - initialized:', state.initialized, 'loading:', state.loading);
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -36,6 +37,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       </div>
     );
   }
+
+  // Step 5: Enhanced dashboard component debugging
+  console.log('ProtectedRoute: Auth state check - User:', state.user?.id || 'None', 'Path:', location.pathname);
 
   // Check if user is authenticated
   if (!state.user) {

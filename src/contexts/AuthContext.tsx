@@ -36,6 +36,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthProvider: State updated from ViewModel:', newState);
       setState(newState);
       
+      // Step 4: Enhanced auth state change handling
+      if (newState.initialized && newState.user && !state.user) {
+        console.log('AuthProvider: User just became authenticated, checking for redirect needs');
+        
+        // Check if we're on an auth page and should redirect
+        const currentPath = window.location.pathname;
+        const authPages = ['/login', '/signup'];
+        
+        if (authPages.includes(currentPath)) {
+          console.log('AuthProvider: User authenticated on auth page, triggering redirect');
+          
+          // Small delay to ensure React state is fully updated
+          setTimeout(() => {
+            const redirectTo = '/dashboard'; // Could be enhanced to use stored intended destination
+            console.log('AuthProvider: Executing redirect to:', redirectTo);
+            window.location.href = redirectTo; // Fallback navigation method
+          }, 100);
+        }
+      }
     });
 
     return () => {

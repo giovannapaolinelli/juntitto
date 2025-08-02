@@ -40,21 +40,37 @@ const LoginPage = () => {
 
     try {
       console.log('LoginPage: Attempting login...');
+      
+      // Step 1: Execute login with proper await
       const result = await signIn({
         email: formData.email,
         password: formData.password
       });
       
+      // Step 2: Add diagnostic logging
+      console.log('LoginPage: Login result:', result);
+      
       if (result.success) {
-        console.log('LoginPage: Login completed, showing success message');
+        console.log('LoginPage: Login successful, checking session...');
+        
+        // Step 3: Verify session exists before proceeding
+        if (state.user) {
+          console.log('LoginPage: User authenticated, initiating redirect...');
+          
+          // Step 4: Implement React Router navigation
+          const redirectTo = location.state?.from?.pathname || '/dashboard';
+          console.log('LoginPage: Redirecting to:', redirectTo);
+          
+          navigate(redirectTo, { replace: true });
+        } else {
+          console.warn('LoginPage: Login successful but no user in state yet, waiting for auth state change...');
+        }
+        
         addToast({
           type: 'success',
           title: 'Login realizado com sucesso!',
           message: 'Bem-vindo de volta ao Juntitto'
         });
-        
-        console.log('LoginPage: Login successful, navigation will be handled by AuthContext');
-        // Navigation is now handled automatically by AuthContext when user state changes
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({

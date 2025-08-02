@@ -17,6 +17,16 @@ const Dashboard = () => {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
 
+  // Step 5: Dashboard component mount debugging
+  useEffect(() => {
+    console.log('Dashboard: Component mounted with auth state:', {
+      isAuthenticated,
+      isLoading,
+      userId: state.user?.id || 'None',
+      initialized: state.initialized
+    });
+  }, [isAuthenticated, isLoading, state.user, state.initialized]);
+
   const [currentPlan] = useState({
     name: "Gratuito",
     maxGuests: 30,

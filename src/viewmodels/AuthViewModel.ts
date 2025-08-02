@@ -102,7 +102,9 @@ export class AuthViewModel {
     this.updateState({ ...this.state, loading: true, error: null });
 
     try {
+      // Step 1: Proper await implementation with diagnostic logging
       const { user, error } = await this.authService.signIn(credentials);
+      console.log('AuthViewModel: Supabase response - User:', user?.id || 'None', 'Error:', error?.message || 'None');
 
       if (error) {
         console.error('AuthViewModel: Sign in failed:', error);
@@ -114,8 +116,26 @@ export class AuthViewModel {
         return { success: false, error: error.message };
       }
 
+      // Step 2: Session validation before success
+      if (user) {
+        console.log('AuthViewModel: Valid user received, updating state...');
+        // Auth state change listener will update the state
+        this.updateState({
+          ...this.state,
+          loading: false,
+          error: null
+        });
+      } else {
+        console.warn('AuthViewModel: No user in response despite no error');
+        this.updateState({
+          ...this.state,
+          loading: false,
+          error: 'Authentication failed - no user data'
+        });
+        return { success: false, error: 'Authentication failed' };
+      }
+
       console.log('AuthViewModel: Sign in successful');
-      // Auth state change listener will update the state
       return { success: true };
 
     } catch (error) {
