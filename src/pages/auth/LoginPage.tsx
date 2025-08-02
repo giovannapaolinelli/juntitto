@@ -4,6 +4,7 @@ import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuthRedirect } from '../../hooks/useAuthRedirect';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 const LoginPage = () => {
   const { state, signIn } = useAuth();
