@@ -44,7 +44,12 @@ const LoginPage = () => {
       
       const result = await signIn({
         email: formData.email,
-        
+         password: formData.password
+       });
+       
+       console.log('LoginPage: signIn result:', result);
+       
+       if (result.success) {
         addToast({
           type: 'success',
           title: 'Login realizado com sucesso!',
@@ -58,8 +63,6 @@ const LoginPage = () => {
           message: result.error || 'Email ou senha incorretos'
         });
       }
-      )
-      
     } catch (error) {
       console.error('LoginPage: Unexpected login error in handleSubmit:', error); // NOVO LOG
       console.error('LoginPage: Unexpected login error:', error);
