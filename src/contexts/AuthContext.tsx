@@ -26,9 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   console.log('AuthProvider: Component rendering/mounting');
   
   // Use useRef to ensure AuthViewModel instance is stable across re-renders
-  const authViewModelRef = useRef<AuthViewModel>(() => {
-    return new AuthViewModel();
-  }());
+  const authViewModelRef = useRef<AuthViewModel>(new AuthViewModel());
   
   const authViewModel = authViewModelRef.current;
 
