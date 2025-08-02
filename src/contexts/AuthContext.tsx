@@ -9,16 +9,9 @@ interface AuthContextType {
   signOut: () => Promise<{ success: boolean; error?: string }>;
   canAccessRoute: (path: string) => { allowed: boolean; redirectTo?: string };
   clearError: () => void;
-}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-    console.log('AuthProvider: AuthViewModel instance created');
-  }
+  const authViewModelRef = useRef<AuthViewModel>(new AuthViewModel());
   return context;
 };
 
@@ -73,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       console.log('AuthProvider: Cleaning up');
       unsubscribe();
-      authViewModelRef.current?.destroy();
+      // Don't destroy the AuthViewModel on cleanup, only on component unmount
     };
   }, [authViewModel]);
   
