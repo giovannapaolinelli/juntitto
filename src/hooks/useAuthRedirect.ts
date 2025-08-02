@@ -6,42 +6,41 @@ import { useAuth } from '../contexts/AuthContext';
  * Hook for handling automatic redirects after authentication
  */
 export const useAuthRedirect = () => {
-  const { state } = useAuth();
+  const { state } = useAuth(); // Assumindo que AuthContext fornece { user, loading, initialized }
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Only handle redirects after auth is fully initialized
-    if (!state.initialized || state.loading) {
-      return;
+    const currentPath = location.pathname;
+    const isAuthPage = ['/login', '/signup'].includes(currentPath);
+    const isGuestQuiz = currentPath.startsWith('/play/');
+
+    const ready = state.initialized && !state.loading;
+
+    // 🟡 Aguarda estado estar pronto
+    if (!ready) return;
+
+    // ✅ Caso 1: Usuário autenticado em página pública (login/signup), redirecionar
+    if (state.user && isAuthPage) {
+      const redirectTo = location.state?.from?.pathname || '/dashboard';
+      console.log('🔁 Redirecionando usuário autenticado para:', redirectTo);
+      navigate(redirectTo, { replace: true });
     }
 
-    const currentPath = location.pathname;
-    const authPages = ['/login', '/signup'];
-    
-    // If user is authenticated and on auth pages, redirect to dashboard
-    if (state.user && authPages.includes(currentPath)) {
-      console.log('useAuthRedirect: Authenticated user on auth page, redirecting to dashboard');
-      
-      // Get intended destination from location state or default to dashboard
-      const redirectTo = location.state?.from?.pathname || '/dashboard';
-      
-      // Use React Router's navigate for proper SPA navigation
-      navigate(redirectTo, { 
-        replace: true,
-        state: undefined // Clear the redirect state
-      });
+    // ✅ Caso 2: Usuário NÃO autenticado tentando acessar rota protegida
+    if (!state.user && !isAuthPage && currentPath !== '/' && !isGuestQuiz) {
+      console.log('🔒 Usuário não autenticado, redirecionando para login');
+      navigate('/login', { replace: true, state: { from: location } });
     }
-    
-    // If user is not authenticated and on protected pages, redirect to login
-    if (!state.user && !authPages.includes(currentPath) && currentPath !== '/' && !currentPath.startsWith('/play/')) {
-      console.log('useAuthRedirect: Unauthenticated user on protected page, redirecting to login');
-      navigate('/login', { 
-        replace: true,
-        state: { from: location }
-      });
-    }
-  }, [state.initialized, state.user, state.loading, location.pathname, navigate, location]);
+
+  }, [
+    state.user,
+    state.loading,
+    state.initialized,
+    location.pathname,
+    location.state,
+    navigate
+  ]);
 
   return {
     isAuthenticated: !!state.user,
