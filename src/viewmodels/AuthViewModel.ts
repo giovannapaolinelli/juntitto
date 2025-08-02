@@ -28,16 +28,16 @@ export class AuthViewModel {
   private async initialize(): Promise<void> {
     console.log('AuthViewModel: Initializing...');
     
-    // Set timeout to prevent infinite loading
+    // Set timeout to prevent infinite loading (increased to 5 seconds)
     const initTimeout = setTimeout(() => {
       console.warn('AuthViewModel: Initialization timeout, marking as initialized');
       this.updateState({
         user: null,
         loading: false,
         initialized: true,
-        error: 'Authentication initialization timeout'
+        error: null // Don't show error for timeout, just mark as initialized
       });
-    }, 3000);
+    }, 5000);
 
     try {
       // Set up auth state change listener
@@ -62,7 +62,7 @@ export class AuthViewModel {
           user: null,
           loading: false,
           initialized: true,
-          error: error.message
+          error: null // Don't show session errors on initial load
         });
         return;
       }
@@ -88,7 +88,7 @@ export class AuthViewModel {
         user: null,
         loading: false,
         initialized: true,
-        error: 'Failed to initialize authentication'
+        error: null // Don't show initialization errors to users
       });
     }
   }

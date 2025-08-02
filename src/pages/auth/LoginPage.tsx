@@ -25,7 +25,7 @@ const LoginPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando autenticação...</p>
+          <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
     );
@@ -56,8 +56,11 @@ const LoginPage = () => {
           message: 'Bem-vindo de volta ao Juntitto'
         });
         
-        console.log('LoginPage: Redirecting to dashboard...');
-        navigate(redirectTo, { replace: true });
+        console.log('LoginPage: Redirecting to:', redirectTo);
+        // Small delay to ensure state is updated before navigation
+        setTimeout(() => {
+          navigate(redirectTo, { replace: true });
+        }, 100);
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({

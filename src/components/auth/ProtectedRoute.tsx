@@ -30,7 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">
-            {!state.initialized ? 'Inicializando...' : 'Verificando autenticação...'}
+            {!state.initialized ? 'Carregando...' : 'Verificando autenticação...'}
           </p>
         </div>
       </div>
