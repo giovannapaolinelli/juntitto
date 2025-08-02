@@ -270,6 +270,8 @@ export class AuthService {
    */
   onAuthStateChange(callback: (user: User | null) => void) {
     return supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('AuthService: Auth state changed (EVENT):', event); // NOVO LOG
+      console.log('AuthService: Auth state changed (SESSION):', session); // NOVO LOG
       console.log('AuthService: Auth state changed:', event, session?.user?.id || 'No user');
       
       if (session?.user) {

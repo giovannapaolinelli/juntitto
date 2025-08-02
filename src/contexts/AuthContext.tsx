@@ -19,33 +19,6 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authViewModel] = useState(() => new AuthViewModel());
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    initialized: false,
-    error: null
-  });
-
-  useEffect(() => {
-    console.log('AuthProvider: Setting up ViewModel subscription');
-    const unsubscribe = authViewModel.subscribe((newState) => {
-      console.log('AuthProvider: State updated from ViewModel:', {
-        hasUser: !!newState.user,
-        userId: newState.user?.id || 'None',
-        previousUserId: state.user?.id || 'None',
-        loading: newState.loading,
-        initialized: newState.initialized,
-        error: newState.error || 'None',
-        stateTransition: `${state.user ? 'authenticated' : 'unauthenticated'} -> ${newState.user ? 'authenticated' : 'unauthenticated'}`,
-        timestamp: new Date().toISOString()
-      });
-      setState(newState);
-      
-      // AuthContext only manages state - redirection handled by useAuthRedirect hook
     });
 
     return () => {

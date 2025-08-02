@@ -42,6 +42,7 @@ export class AuthViewModel {
     try {
       // Set up auth state change listener
       this.authStateUnsubscribe = this.authService.onAuthStateChange((user) => {
+        console.log('AuthViewModel: Received auth state change from AuthService:', { userId: user?.id || 'No user' }); // NOVO LOG
         console.log('AuthViewModel: Auth state changed:', {
           userId: user?.id || 'No user',
           userEmail: user?.email || 'No email',

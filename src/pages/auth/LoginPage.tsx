@@ -37,25 +37,13 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    console.log('LoginPage: Button loading set to true'); // NOVO LOG
 
     try {
       console.log('LoginPage: Attempting login...');
       
       const result = await signIn({
         email: formData.email,
-        password: formData.password
-      });
-      
-      console.log('LoginPage: Login attempt result:', {
-        success: result.success,
-        error: result.error || 'None',
-        timestamp: new Date().toISOString()
-      });
-      
-      if (result.success) {
-        console.log('LoginPage: Login successful, auth state will handle redirect');
-        
-        // Redirection is handled by useAuthRedirect hook
         
         addToast({
           type: 'success',
@@ -72,6 +60,7 @@ const LoginPage = () => {
       }
       
     } catch (error) {
+      console.error('LoginPage: Unexpected login error in handleSubmit:', error); // NOVO LOG
       console.error('LoginPage: Unexpected login error:', error);
       addToast({
         type: 'error',
@@ -81,6 +70,7 @@ const LoginPage = () => {
     } finally {
       // Always reset loading state regardless of success or failure
       setIsSubmitting(false);
+      console.log('LoginPage: Button loading set to false (finally block)'); // NOVO LOG
       console.log('LoginPage: Loading state reset');
     }
   };
