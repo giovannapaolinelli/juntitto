@@ -272,19 +272,12 @@ export class AuthService {
 
       console.log('AuthService: Creating user profile:', userData);
       
-      // Create a promise with timeout to prevent hanging
-      const insertPromise = supabase
+      console.log('AuthService: Executing user creation query...');
+      const { data, error } = await supabase
         .from('users')
         .insert(userData)
         .select()
         .single();
-
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('User creation timeout')), 10000);
-      });
-
-      console.log('AuthService: Executing user creation query with timeout...');
-      const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any;
 
       console.log('AuthService: User creation query completed:', {
         hasData: !!data,
@@ -294,6 +287,12 @@ export class AuthService {
       });
 
       if (error) {
+        // If user already exists, try to fetch it instead
+        if (error.code === '23505') {
+          console.log('AuthService: User already exists, fetching existing profile...');
+          return this.getUserProfileDirect(authUser.id);
+        }
+        
         console.error('AuthService: Create user profile error:', error);
         return null;
       }
@@ -355,19 +354,12 @@ export class AuthService {
     try {
       console.log('AuthService: Getting user profile with session context for:', userId);
       
-      // Create a promise with timeout to prevent hanging
-      const queryPromise = supabase
+      console.log('AuthService: Executing database query...');
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
-
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Database query timeout')), 10000);
-      });
-
-      console.log('AuthService: Executing database query with timeout...');
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
       console.log('AuthService: Database query completed:', {
         hasData: !!data,
@@ -394,6 +386,27 @@ export class AuthService {
       return data;
     } catch (error) {
       console.error('AuthService: Exception in getUserProfileWithSession:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get user profile directly without session context
+   */
+  private async getUserProfileDirect(userId: string): Promise<User | null> {
+    try {
+      console.log('AuthService: Getting user profile directly for:', userId);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error || !data) return null;
+      return data;
+    } catch (error) {
+      console.error('AuthService: Error getting user profile directly:', error);
       return null;
     }
   }
