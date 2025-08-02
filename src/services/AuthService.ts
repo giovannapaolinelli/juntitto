@@ -216,11 +216,26 @@ export class AuthService {
     try {
       console.log('AuthService: Getting user profile from database for:', userId);
       
+      // Ensure we have a valid session before querying
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('AuthService: Session error when getting user profile:', sessionError);
+        return null;
+      }
+      
+      if (!session) {
+        console.error('AuthService: No session available for user profile query');
+        return null;
+      }
+      
+      console.log('AuthService: Session confirmed, executing database query...');
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       console.log('AuthService: Database query result:', {
         hasData: !!data,
@@ -229,7 +244,11 @@ export class AuthService {
       });
 
       if (error) {
-        console.error('AuthService: Get user profile error:', error);
+        if (error.code === 'PGRST116') {
+          console.log('AuthService: User profile not found in database, will need to create one');
+          return null;
+        }
+        console.error('AuthService: Get user profile database error:', error);
         return null;
       }
 
