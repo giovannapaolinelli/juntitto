@@ -309,8 +309,8 @@ export class AuthService {
       
       if (session?.user) {
         console.log('AuthService: Session found, getting user profile for:', session.user.id);
-        // Get or create user profile
-        let userProfile = await this.getUserProfile(session.user.id);
+        // Get or create user profile using the provided session
+        let userProfile = await this.getUserProfileWithSession(session.user.id, session);
         
         if (!userProfile) {
           console.log('AuthService: No user profile found, creating one...');
@@ -324,6 +324,56 @@ export class AuthService {
         callback(null);
       }
     });
+  }
+
+  /**
+   * Get user profile using a specific session context
+   */
+  private async getUserProfileWithSession(userId: string, session: any): Promise<User | null> {
+    try {
+      console.log('AuthService: Getting user profile with session context for:', userId);
+      
+      // Create a promise with timeout to prevent hanging
+      const queryPromise = supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database query timeout')), 10000);
+      });
+
+      console.log('AuthService: Executing database query with timeout...');
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+      console.log('AuthService: Database query completed:', {
+        hasData: !!data,
+        userData: data,
+        error: error?.message || 'None',
+        errorCode: error?.code || 'None'
+      });
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('AuthService: User profile not found in database, will need to create one');
+          return null;
+        }
+        console.error('AuthService: Database error when getting user profile:', error);
+        return null;
+      }
+
+      if (!data) {
+        console.log('AuthService: No user profile data returned from database');
+        return null;
+      }
+
+      console.log('AuthService: User profile found successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('AuthService: Exception in getUserProfileWithSession:', error);
+      return null;
+    }
   }
 
   /**
