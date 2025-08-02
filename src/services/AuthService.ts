@@ -214,15 +214,29 @@ export class AuthService {
    */
   private async getUserProfile(userId: string): Promise<User | null> {
     try {
+      console.log('AuthService: Getting user profile from database for:', userId);
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
+      console.log('AuthService: Database query result:', {
+        hasData: !!data,
+        userData: data,
+        error: error?.message || 'None'
+      });
+
       if (error) {
         console.error('AuthService: Get user profile error:', error);
         return null;
+      }
+
+      if (!data) {
+        console.log('AuthService: No user profile found in database for:', userId);
+      } else {
+        console.log('AuthService: User profile found:', data);
       }
 
       return data;
