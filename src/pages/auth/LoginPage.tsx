@@ -109,7 +109,7 @@ const LoginPage = () => {
       
       const result = await signIn({
         email: formData.email,
-         password: formData.password
+        password: formData.password
        });
        
        console.log('LoginPage: signIn result:', result);
