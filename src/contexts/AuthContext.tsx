@@ -40,6 +40,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initialized: newState.initialized,
         error: newState.error || 'None'
       });
+      console.log('AuthProvider: Received state from ViewModel:', {
+        hasUser: !!newState.user,
+        userId: newState.user?.id || 'None',
+        loading: newState.loading,
+        initialized: newState.initialized,
+        error: newState.error || 'None'
+      });
       console.log('AuthProvider: State updated from ViewModel:', {
         hasUser: !!newState.user,
         userId: newState.user?.id || 'None',
@@ -47,6 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initialized: newState.initialized,
         error: newState.error || 'None',
         timestamp: new Date().toISOString()
+      });
+      console.log('AuthProvider: Setting React state to:', {
+        hasUser: !!newState.user,
+        userId: newState.user?.id || 'None',
+        loading: newState.loading,
+        initialized: newState.initialized,
+        error: newState.error || 'None'
       });
       console.log('AuthProvider: Setting React state to:', {
         hasUser: !!newState.user,
