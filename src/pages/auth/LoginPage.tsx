@@ -10,7 +10,7 @@ const LoginPage = () => {
   const { addToast } = useToast();
   const { isAuthenticated } = useAuthRedirect();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -36,7 +36,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
       console.log('LoginPage: Attempting login...');
@@ -55,23 +55,13 @@ const LoginPage = () => {
       if (result.success) {
         console.log('LoginPage: Login successful, auth state will handle redirect');
         
-        // Let AuthContext handle the redirect automatically
-        // This prevents race conditions with state updates
+        // Redirection is handled by useAuthRedirect hook
         
         addToast({
           type: 'success',
           title: 'Login realizado com sucesso!',
           message: 'Bem-vindo de volta ao Juntitto'
         });
-        
-        // Additional fallback redirect if AuthContext doesn't handle it
-        setTimeout(() => {
-          if (window.location.pathname === '/login') {
-            console.log('LoginPage: Fallback redirect triggered');
-            const redirectTo = location.state?.from?.pathname || '/dashboard';
-            navigate(redirectTo, { replace: true });
-          }
-        }, 500);
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({
@@ -89,7 +79,9 @@ const LoginPage = () => {
         message: 'Ocorreu um erro inesperado. Tente novamente.'
       });
     } finally {
-      setLoading(false);
+      // Always reset loading state regardless of success or failure
+      setIsSubmitting(false);
+      console.log('LoginPage: Loading state reset');
     }
   };
 
@@ -176,10 +168,10 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isSubmitting || state.loading}
               className="w-full bg-gradient-to-r from-rose-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {isSubmitting ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
 

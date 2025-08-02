@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
- * Hook for handling automatic redirects after authentication
+ * Centralized hook for handling all authentication-based redirects
+ * This is the single source of truth for post-login redirection logic
  */
 export const useAuthRedirect = () => {
-  const { state } = useAuth(); // Assumindo que AuthContext fornece { user, loading, initialized }
+  const { state } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -14,25 +15,42 @@ export const useAuthRedirect = () => {
     const currentPath = location.pathname;
     const isAuthPage = ['/login', '/signup'].includes(currentPath);
     const isGuestQuiz = currentPath.startsWith('/play/');
+    const isPublicPage = currentPath === '/' || currentPath.startsWith('/pricing') || currentPath.startsWith('/terms') || currentPath.startsWith('/privacy');
 
-    const ready = state.initialized && !state.loading;
+    // Wait for authentication state to be fully initialized
+    if (!state.initialized || state.loading) {
+      console.log('useAuthRedirect: Waiting for auth initialization...', {
+        initialized: state.initialized,
+        loading: state.loading
+      });
+      return;
+    }
 
-    // 🟡 Aguarda estado estar pronto
-    if (!ready) return;
+    console.log('useAuthRedirect: Processing redirect logic', {
+      currentPath,
+      isAuthenticated: !!state.user,
+      isAuthPage,
+      isGuestQuiz,
+      isPublicPage,
+      userId: state.user?.id || 'None'
+    });
 
-    // ✅ Caso 1: Usuário autenticado em página pública (login/signup), redirecionar
+    // Case 1: Authenticated user on auth pages should be redirected to dashboard
     if (state.user && isAuthPage) {
       const redirectTo = location.state?.from?.pathname || '/dashboard';
-      console.log('🔁 Redirecionando usuário autenticado para:', redirectTo);
+      console.log('useAuthRedirect: Redirecting authenticated user from auth page to:', redirectTo);
       navigate(redirectTo, { replace: true });
+      return;
     }
 
-    // ✅ Caso 2: Usuário NÃO autenticado tentando acessar rota protegida
-    if (!state.user && !isAuthPage && currentPath !== '/' && !isGuestQuiz) {
-      console.log('🔒 Usuário não autenticado, redirecionando para login');
+    // Case 2: Unauthenticated user trying to access protected routes
+    if (!state.user && !isAuthPage && !isPublicPage && !isGuestQuiz) {
+      console.log('useAuthRedirect: Redirecting unauthenticated user to login from:', currentPath);
       navigate('/login', { replace: true, state: { from: location } });
+      return;
     }
 
+    console.log('useAuthRedirect: No redirect needed for current state');
   }, [
     state.user,
     state.loading,

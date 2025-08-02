@@ -45,6 +45,8 @@ export class AuthViewModel {
         console.log('AuthViewModel: Auth state changed:', {
           userId: user?.id || 'No user',
           userEmail: user?.email || 'No email',
+          hasUser: !!user,
+          previousUser: this.state.user?.id || 'None',
           timestamp: new Date().toISOString()
         });
         clearTimeout(initTimeout);

@@ -36,40 +36,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthProvider: State updated from ViewModel:', {
         hasUser: !!newState.user,
         userId: newState.user?.id || 'None',
+        previousUserId: state.user?.id || 'None',
         loading: newState.loading,
         initialized: newState.initialized,
         error: newState.error || 'None',
+        stateTransition: `${state.user ? 'authenticated' : 'unauthenticated'} -> ${newState.user ? 'authenticated' : 'unauthenticated'}`,
         timestamp: new Date().toISOString()
       });
       setState(newState);
       
-      // Enhanced auth state change handling for post-login redirect
-      if (newState.initialized && newState.user && !state.user) {
-        console.log('AuthProvider: User authentication detected, checking for redirect needs');
-        
-        // Check if we're on an auth page and should redirect
-        const currentPath = window.location.pathname;
-        const authPages = ['/login', '/signup'];
-        
-        if (authPages.includes(currentPath)) {
-          console.log('AuthProvider: User authenticated on auth page, initiating redirect to dashboard');
-          
-          // Ensure React state is fully propagated before navigation
-          setTimeout(() => {
-            const redirectTo = '/dashboard';
-            console.log('AuthProvider: Executing redirect to:', redirectTo, 'at', new Date().toISOString());
-            
-            // Primary navigation method
-            try {
-              window.history.pushState({}, '', redirectTo);
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            } catch (error) {
-              console.warn('AuthProvider: History API failed, using location.href fallback');
-              window.location.href = redirectTo;
-            }
-          }, 100);
-        }
-      }
+      // AuthContext only manages state - redirection handled by useAuthRedirect hook
     });
 
     return () => {
