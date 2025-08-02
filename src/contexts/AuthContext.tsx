@@ -27,20 +27,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Use useRef to ensure AuthViewModel instance is stable across re-renders
   const authViewModelRef = useRef<AuthViewModel>(() => {
-  }
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    loading: true,
-    initialized: false,
     return new AuthViewModel();
   }());
-  )
   
   const authViewModel = authViewModelRef.current;
 
   const [state, setState] = useState<AuthState>(() => {
     return authViewModel.getState();
   });
+
+  useEffect(() => {
+    const unsubscribe = authViewModel.subscribe((newState: AuthState) => {
       console.log('AuthProvider: Received state from ViewModel:', {
         hasUser: !!newState.user,
         userId: newState.user?.id || 'None',
