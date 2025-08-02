@@ -29,12 +29,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const authViewModelRef = useRef<AuthViewModel | null>(null);
   
   if (!authViewModelRef.current) {
+  }
   const [state, setState] = useState<AuthState>({
     user: null,
     loading: true,
     initialized: false,
     authViewModelRef.current = new AuthViewModel();
   }
+  )
   
   const authViewModel = authViewModelRef.current;
 
