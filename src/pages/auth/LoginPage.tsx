@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { user, login, loading: authLoading } = useAuth();
+  const { user, login, loading: authLoading, initialized } = useAuth();
   const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,33 +15,44 @@ const LoginPage = () => {
     password: ''
   });
 
+  // Show loading while auth is initializing
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Redirect if already logged in
-  if (user && !authLoading) {
+  if (user) {
+    console.log('LoginPage: User already authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log('Attempting login...');
+      console.log('LoginPage: Attempting login...');
       await login(formData.email, formData.password);
       
-      console.log('Login completed, showing success message');
+      console.log('LoginPage: Login completed, showing success message');
       addToast({
         type: 'success',
         title: 'Login realizado com sucesso!',
         message: 'Bem-vindo de volta ao Juntitto'
       });
       
-      console.log('Redirecting to dashboard...');
-      // Small delay to ensure user state is updated
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 100);
+      console.log('LoginPage: Redirecting to dashboard...');
+      navigate('/dashboard', { replace: true });
       
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('LoginPage: Login error:', error);
       addToast({
         type: 'error',
         title: 'Erro no login',

@@ -30,6 +30,8 @@ import Navigation from './components/navigation/Navigation';
 import Footer from './components/layout/Footer';
 
 function App() {
+  console.log('App: Rendering application');
+  
   return (
     <ThemeProvider>
       <AuthProvider>

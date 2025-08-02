@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 
 const SignupPage = () => {
   const navigate = useNavigate();
-  const { user, signup, loading: authLoading } = useAuth();
+  const { user, signup, loading: authLoading, initialized } = useAuth();
   const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,10 +17,24 @@ const SignupPage = () => {
     confirmPassword: ''
   });
 
+  // Show loading while auth is initializing
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Redirect if already logged in
-  if (user && !authLoading) {
+  if (user) {
+    console.log('SignupPage: User already authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -45,24 +59,21 @@ const SignupPage = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting signup...');
+      console.log('SignupPage: Attempting signup...');
       await signup(formData.email, formData.password, formData.name);
       
-      console.log('Signup completed, showing success message');
+      console.log('SignupPage: Signup completed, showing success message');
       addToast({
         type: 'success',
         title: 'Conta criada com sucesso!',
-        message: 'Bem-vindo ao Juntitto! Redirecionando...'
+        message: 'Bem-vindo ao Juntitto!'
       });
       
-      console.log('Redirecting to dashboard...');
-      // Small delay to ensure user state is updated
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 1000);
+      console.log('SignupPage: Redirecting to dashboard...');
+      navigate('/dashboard', { replace: true });
       
     } catch (error: any) {
-      console.error('Signup error:', error);
+      console.error('SignupPage: Signup error:', error);
       addToast({
         type: 'error',
         title: 'Erro no cadastro',

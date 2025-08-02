@@ -9,6 +9,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
+  initialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,24 +25,35 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
+    console.log('AuthProvider: Initializing auth state...');
+    setLoading(true);
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthProvider: Initial session check:', session?.user?.id || 'No session');
       if (session?.user) {
         handleAuthenticatedUser(session.user);
       } else {
+        console.log('AuthProvider: No initial session found');
         setLoading(false);
+        setInitialized(true);
       }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('AuthProvider: Auth state changed:', event, session?.user?.id || 'No user');
+      
       if (session?.user) {
         await handleAuthenticatedUser(session.user);
       } else {
+        console.log('AuthProvider: User logged out or session ended');
         setUser(null);
         setLoading(false);
+        setInitialized(true);
       }
     });
 
@@ -49,9 +61,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const handleAuthenticatedUser = async (authUser: any) => {
+    console.log('AuthProvider: Handling authenticated user:', authUser.id);
+    setLoading(true);
+    
     try {
-      console.log('Handling authenticated user:', authUser.id);
-      
       // First, try to fetch existing user profile
       const { data, error } = await supabase
         .from('users')
@@ -76,7 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error fetching user profile:', error);
       setUser(null);
     } finally {
+      console.log('AuthProvider: Auth handling complete');
       setLoading(false);
+      setInitialized(true);
     }
   };
 
@@ -111,10 +126,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signup = async (email: string, password: string, name: string) => {
+    console.log('AuthProvider: Starting signup process...');
     setLoading(true);
     try {
-      console.log('Starting signup process...');
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -134,17 +148,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('Signup error:', error);
-      throw error;
-    } finally {
       setLoading(false);
+      throw error;
     }
   };
 
   const login = async (email: string, password: string) => {
+    console.log('AuthProvider: Starting login process...');
     setLoading(true);
     try {
-      console.log('Starting login process...');
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -160,22 +172,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
-    } finally {
       setLoading(false);
+      throw error;
     }
   };
 
   const logout = async () => {
     console.log('Logging out...');
+    setLoading(true);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUser(null);
+    setLoading(false);
+    setInitialized(true);
   };
 
   const value = {
     user,
     loading,
+    initialized,
     signup,
     login,
     logout
