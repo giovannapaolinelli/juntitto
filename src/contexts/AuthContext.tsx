@@ -17,12 +17,14 @@ export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
+    console.log('AuthProvider: AuthViewModel instance created');
   }
   return context;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   console.log('AuthProvider: Component function called');
+  console.log('AuthProvider: Component rendering/mounting');
   console.log('AuthProvider: Component rendering/mounting');
   
   // Use useRef to ensure AuthViewModel instance is stable across re-renders
@@ -35,6 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
+    console.log('AuthProvider: useEffect running - setting up subscription');
+    console.log('AuthProvider: Setting up ViewModel subscription');
     const unsubscribe = authViewModel.subscribe((newState: AuthState) => {
       console.log('AuthProvider: Received state from ViewModel:', {
         hasUser: !!newState.user,
@@ -65,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, 0);
     });
 
+    console.log('AuthProvider: Subscription setup complete');
     return () => {
       console.log('AuthProvider: Cleaning up');
       unsubscribe();
