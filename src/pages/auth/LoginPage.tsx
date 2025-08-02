@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } '../../contexts/ToastContext';
+import { useToast } from '../../contexts/ToastContext';
 import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 const LoginPage = () => {
