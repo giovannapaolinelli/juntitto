@@ -6,6 +6,7 @@ import { ToastProvider } from './contexts/ToastContext';
 
 // Public Pages
 import LandingPage from './pages/LandingPage';
+import DemoPage from './pages/DemoPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import PricingPage from './pages/PricingPage';
@@ -42,6 +43,7 @@ function App() {
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/demo" element={<DemoPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/pricing" element={<PricingPage />} />

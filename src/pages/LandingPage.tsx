@@ -1,8 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useState } from 'react-router-dom';
 import { Play, Heart, Users, Trophy, ArrowRight, Star, Check } from 'lucide-react';
 
 const LandingPage = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -18,6 +20,7 @@ const LandingPage = () => {
             <nav className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-700 hover:text-rose-600 transition-colors">Recursos</a>
               <Link to="/pricing" className="text-gray-700 hover:text-rose-600 transition-colors">Preços</Link>
+              <Link to="/demo" className="text-gray-700 hover:text-rose-600 transition-colors">Demo</Link>
               <Link to="/login" className="text-gray-700 hover:text-rose-600 transition-colors">Entrar</Link>
               <Link 
                 to="/signup" 
@@ -26,7 +29,40 @@ const LandingPage = () => {
                 Começar Grátis
               </Link>
             </nav>
+            
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-gray-700 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500 rounded-lg"
+              aria-label="Toggle mobile menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
+          
+          {/* Mobile menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden border-t border-rose-100 py-4">
+              <div className="flex flex-col space-y-4">
+                <a href="#features" className="text-gray-700 hover:text-rose-600 transition-colors px-4 py-2">Recursos</a>
+                <Link to="/pricing" className="text-gray-700 hover:text-rose-600 transition-colors px-4 py-2">Preços</Link>
+                <Link to="/demo" className="text-gray-700 hover:text-rose-600 transition-colors px-4 py-2">Demo</Link>
+                <Link to="/login" className="text-gray-700 hover:text-rose-600 transition-colors px-4 py-2">Entrar</Link>
+                <Link 
+                  to="/signup" 
+                  className="bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-200 mx-4 text-center"
+                >
+                  Começar Grátis
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -54,7 +90,7 @@ const LandingPage = () => {
                 <span>Criar Meu Quiz</span>
               </Link>
               <Link 
-                to="/play/demo"
+                to="/demo"
                 className="text-gray-700 hover:text-rose-600 transition-colors flex items-center space-x-2 px-8 py-4"
               >
                 <span>Ver Demonstração</span>
