@@ -122,14 +122,6 @@ export class AuthViewModel {
     try {
       const { user, error } = await this.authService.signIn(credentials);
       
-      console.log('AuthViewModel: Sign in response:', {
-        success: !!user,
-        userId: user?.id || 'None',
-        userEmail: user?.email || 'None',
-        error: error?.message || 'None',
-        timestamp: new Date().toISOString()
-      });
-
       if (error) {
         console.error('AuthViewModel: Sign in failed:', error);
         this.updateState({
@@ -140,22 +132,9 @@ export class AuthViewModel {
         return { success: false, error: error.message };
       }
 
-      if (user) {
-        console.log('AuthViewModel: Valid user received, auth state change listener will update state');
-        this.updateState({
-          ...this.state,
-          loading: false,
-          error: null
-        });
-      } else {
-        console.warn('AuthViewModel: No user in response despite no error');
-        this.updateState({
-          ...this.state,
-          loading: false,
-          error: 'Authentication failed - no user data'
-        });
-        return { success: false, error: 'Authentication failed' };
-      }
+      // Don't update loading state here - let the auth state change callback handle it
+      // The user will be set by onAuthStateChange callback
+      console.log('AuthViewModel: Sign in request successful, waiting for auth state change');
 
       console.log('AuthViewModel: Sign in successful');
       return { success: true };
