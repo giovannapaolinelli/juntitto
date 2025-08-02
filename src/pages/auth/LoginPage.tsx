@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const { state, signIn } = useAuth();
   const { addToast } = useToast();
   const { isAuthenticated } = useAuthRedirect();
@@ -35,6 +36,14 @@ const LoginPage = () => {
       setInitTimeout(false);
     }
   }, [state.initialized, initTimeout]);
+
+  // Handle redirect after successful authentication
+  useEffect(() => {
+    if (state.initialized && state.user && !isSubmitting) {
+      console.log('LoginPage: User authenticated after login, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [state.initialized, state.user, isSubmitting, navigate]);
 
   // Show loading while auth is initializing
   if (!state.initialized && !initTimeout) {
@@ -107,6 +116,7 @@ const LoginPage = () => {
           title: 'Login realizado com sucesso!',
           message: 'Bem-vindo de volta ao Juntitto'
         });
+        // Navigation will be handled by the useEffect above
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({
