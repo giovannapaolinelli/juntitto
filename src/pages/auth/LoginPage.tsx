@@ -120,7 +120,13 @@ const LoginPage = () => {
           title: 'Login realizado com sucesso!',
           message: 'Bem-vindo de volta ao Juntitto'
         });
-        // Navigation will be handled by the useEffect above or useAuthRedirect
+        
+        // Wait a brief moment for auth state to update, then redirect
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+          setIsSubmitting(false);
+        }, 100);
+        return; // Don't execute finally block immediately
       } else {
         console.error('LoginPage: Login failed:', result.error);
         addToast({
@@ -137,10 +143,12 @@ const LoginPage = () => {
         message: 'Ocorreu um erro inesperado. Tente novamente.'
       });
     } finally {
-      // Always reset loading state regardless of success or failure
-      setIsSubmitting(false);
-      console.log('LoginPage: Button loading set to false (finally block)'); // NOVO LOG
-      console.log('LoginPage: Loading state reset');
+      // Only reset loading state if login failed (success case handles it in setTimeout)
+      if (!state.user) {
+        setIsSubmitting(false);
+        console.log('LoginPage: Button loading set to false (finally block)');
+        console.log('LoginPage: Loading state reset');
+      }
     }
   };
 
