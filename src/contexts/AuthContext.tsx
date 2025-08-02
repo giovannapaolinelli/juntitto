@@ -19,6 +19,17 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [authViewModel] = useState(() => new AuthViewModel());
+  const [state, setState] = useState<AuthState>(authViewModel.getState());
+
+  useEffect(() => {
+    console.log('AuthProvider: Setting up subscription');
+    const unsubscribe = authViewModel.subscribe((newState: AuthState) => {
+      console.log('AuthProvider: State updated', newState);
+      setState(newState);
     });
 
     return () => {
