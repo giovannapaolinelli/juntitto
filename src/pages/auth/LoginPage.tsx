@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { user, login, loading: authLoading, initialized } = useAuth();
+  const { state, signIn } = useAuth();
   const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ const LoginPage = () => {
   });
 
   // Show loading while auth is initializing
-  if (!initialized) {
+  if (!state.initialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -28,7 +28,7 @@ const LoginPage = () => {
   }
 
   // Redirect if already logged in
-  if (user) {
+  if (state.user) {
     console.log('LoginPage: User already authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
@@ -39,24 +39,36 @@ const LoginPage = () => {
 
     try {
       console.log('LoginPage: Attempting login...');
-      await login(formData.email, formData.password);
-      
-      console.log('LoginPage: Login completed, showing success message');
-      addToast({
-        type: 'success',
-        title: 'Login realizado com sucesso!',
-        message: 'Bem-vindo de volta ao Juntitto'
+      const result = await signIn({
+        email: formData.email,
+        password: formData.password
       });
       
-      console.log('LoginPage: Redirecting to dashboard...');
-      navigate('/dashboard', { replace: true });
+      if (result.success) {
+        console.log('LoginPage: Login completed, showing success message');
+        addToast({
+          type: 'success',
+          title: 'Login realizado com sucesso!',
+          message: 'Bem-vindo de volta ao Juntitto'
+        });
+        
+        console.log('LoginPage: Redirecting to dashboard...');
+        navigate('/dashboard', { replace: true });
+      } else {
+        console.error('LoginPage: Login failed:', result.error);
+        addToast({
+          type: 'error',
+          title: 'Erro no login',
+          message: result.error || 'Email ou senha incorretos'
+        });
+      }
       
-    } catch (error: any) {
-      console.error('LoginPage: Login error:', error);
+    } catch (error) {
+      console.error('LoginPage: Unexpected login error:', error);
       addToast({
         type: 'error',
         title: 'Erro no login',
-        message: error.message || 'Email ou senha incorretos'
+        message: 'Ocorreu um erro inesperado. Tente novamente.'
       });
     } finally {
       setLoading(false);

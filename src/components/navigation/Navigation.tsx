@@ -7,19 +7,28 @@ import { useToast } from '../../contexts/ToastContext';
 const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { state, signOut } = useAuth();
   const { addToast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    addToast({
-      type: 'success',
-      title: 'Logout realizado',
-      message: 'Até logo!'
-    });
-    navigate('/');
+  const handleLogout = async () => {
+    const result = await signOut();
+    
+    if (result.success) {
+      addToast({
+        type: 'success',
+        title: 'Logout realizado',
+        message: 'Até logo!'
+      });
+      navigate('/');
+    } else {
+      addToast({
+        type: 'error',
+        title: 'Erro no logout',
+        message: result.error || 'Não foi possível fazer logout'
+      });
+    }
   };
 
   const isActive = (path: string) => {
@@ -82,7 +91,7 @@ const Navigation = () => {
                 <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-purple-600 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <span className="hidden sm:block font-medium">{user?.name}</span>
+                <span className="hidden sm:block font-medium">{state.user?.name}</span>
               </button>
 
               {/* Dropdown menu */}

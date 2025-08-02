@@ -9,9 +9,9 @@ import QRCodeModal from '../../components/quiz/QRCodeModal';
 
 const Dashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { state } = useAuth();
   const { addToast } = useToast();
-  const { quizzes, loading } = useQuizViewModel(user?.id);
+  const { quizzes, loading } = useQuizViewModel(state.user?.id);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
 

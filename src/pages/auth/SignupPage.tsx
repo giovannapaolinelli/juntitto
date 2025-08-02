@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 
 const SignupPage = () => {
   const navigate = useNavigate();
-  const { user, signup, loading: authLoading, initialized } = useAuth();
+  const { state, signUp } = useAuth();
   const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ const SignupPage = () => {
   });
 
   // Show loading while auth is initializing
-  if (!initialized) {
+  if (!state.initialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -30,7 +30,7 @@ const SignupPage = () => {
   }
 
   // Redirect if already logged in
-  if (user) {
+  if (state.user) {
     console.log('SignupPage: User already authenticated, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
@@ -60,24 +60,37 @@ const SignupPage = () => {
 
     try {
       console.log('SignupPage: Attempting signup...');
-      await signup(formData.email, formData.password, formData.name);
-      
-      console.log('SignupPage: Signup completed, showing success message');
-      addToast({
-        type: 'success',
-        title: 'Conta criada com sucesso!',
-        message: 'Bem-vindo ao Juntitto!'
+      const result = await signUp({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name
       });
       
-      console.log('SignupPage: Redirecting to dashboard...');
-      navigate('/dashboard', { replace: true });
+      if (result.success) {
+        console.log('SignupPage: Signup completed, showing success message');
+        addToast({
+          type: 'success',
+          title: 'Conta criada com sucesso!',
+          message: 'Faça login para continuar'
+        });
+        
+        console.log('SignupPage: Redirecting to login...');
+        navigate('/login', { replace: true });
+      } else {
+        console.error('SignupPage: Signup failed:', result.error);
+        addToast({
+          type: 'error',
+          title: 'Erro no cadastro',
+          message: result.error || 'Não foi possível criar sua conta'
+        });
+      }
       
-    } catch (error: any) {
-      console.error('SignupPage: Signup error:', error);
+    } catch (error) {
+      console.error('SignupPage: Unexpected signup error:', error);
       addToast({
         type: 'error',
         title: 'Erro no cadastro',
-        message: 'Não foi possível criar sua conta. Verifique seus dados e tente novamente.'
+        message: 'Ocorreu um erro inesperado. Tente novamente.'
       });
     } finally {
       setLoading(false);
