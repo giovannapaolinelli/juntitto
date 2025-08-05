@@ -262,7 +262,6 @@ export class AuthService {
    * Create user profile in users table
    */
   async createUserProfile(authUser: any): Promise<User | null> {
-    const queryTimeout = 15000; // 15 second timeout for creation
     try {
       const userData = {
         id: authUser.id,
@@ -274,19 +273,11 @@ export class AuthService {
       console.log('AuthService: Creating user profile:', userData);
       console.log('AuthService: Executing user creation query...');
       
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('User creation query timeout')), queryTimeout);
-      });
-      
-      // Race the query against the timeout
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from('users')
         .insert(userData)
         .select()
         .single();
-      
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
       console.log('AuthService: User creation completed with:', { hasData: !!data, error: error?.message || 'None' });
 
@@ -313,7 +304,7 @@ export class AuthService {
       return data;
     } catch (error) {
       console.error('AuthService: Unexpected create user profile error:', error);
-      throw error; // Re-throw to be handled by caller
+      return null;
     }
   }
 
@@ -321,69 +312,40 @@ export class AuthService {
    * Set up auth state change listener
    */
   onAuthStateChange(callback: (user: User | null) => void) {
-    let isProcessing = false; // Prevent duplicate processing
     return supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('AuthService: Auth state changed (EVENT):', event); // NOVO LOG
       console.log('AuthService: Auth state changed (SESSION):', session); // NOVO LOG
       console.log('AuthService: Auth state changed:', event, session?.user?.id || 'No user');
       
-      // Prevent duplicate processing of the same event
-      if (isProcessing) {
-        console.log('AuthService: Already processing auth state change, skipping...');
-        return;
-      }
-      
       if (session?.user) {
-        isProcessing = true;
         console.log('AuthService: Session found, getting user profile for:', session.user.id);
+        // Get or create user profile using the provided session
+        let userProfile = await this.getUserProfileWithSession(session.user.id, session);
         
-        try {
-          // Get or create user profile using the provided session
-          let userProfile = await this.getUserProfileWithSession(session.user.id, session);
+        if (!userProfile) {
+          console.log('AuthService: No user profile found, creating one...');
+          userProfile = await this.createUserProfile(session.user);
           
+          // If user creation also fails, create a minimal user object from auth data
           if (!userProfile) {
-            console.log('AuthService: No user profile found, creating one...');
-            try {
-              userProfile = await this.createUserProfile(session.user);
-            } catch (createError) {
-              console.error('AuthService: User creation failed:', createError);
-              // If user creation fails, create a minimal user object from auth data
-              console.log('AuthService: Using fallback user object');
-              userProfile = {
-                id: session.user.id,
-                email: session.user.email || '',
-                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-                plan: 'free' as const,
-                stripe_customer_id: null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-            }
+            console.log('AuthService: User creation failed, using fallback user object');
+            userProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              plan: 'free' as const,
+              stripe_customer_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
           }
-          
-          console.log('AuthService: Calling callback with user profile:', userProfile?.id || 'No profile');
-          callback(userProfile);
-        } catch (error) {
-          console.error('AuthService: Error processing user profile:', error);
-          // Create fallback user object
-          const fallbackUser = {
-            id: session.user.id,
-            email: session.user.email || '',
-            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-            plan: 'free' as const,
-            stripe_customer_id: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-          console.log('AuthService: Using fallback user due to error:', fallbackUser);
-          callback(fallbackUser);
-        } finally {
-          isProcessing = false;
         }
+        
+        console.log('AuthService: Calling callback with user profile:', userProfile?.id || 'No profile');
+        callback(userProfile);
       } else {
         console.log('AuthService: No session, calling callback with null');
         callback(null);
-        isProcessing = false;
       }
     });
   }
@@ -392,26 +354,16 @@ export class AuthService {
    * Get user profile using a specific session context
    */
   private async getUserProfileWithSession(userId: string, session: any): Promise<User | null> {
-    const queryTimeout = 10000; // 10 second timeout
     try {
       console.log('AuthService: Getting user profile with session context for:', userId);
       console.log('AuthService: Session details:', { hasAccessToken: !!session?.access_token, expiresAt: session?.expires_at });
       
       console.log('AuthService: Executing database query...');
-      
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Database query timeout')), queryTimeout);
-      });
-      
-      // Race the query against the timeout
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
-      
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
       console.log('AuthService: Database query completed with:', { hasData: !!data, error: error?.message || 'None' });
 
@@ -449,25 +401,16 @@ export class AuthService {
    * Get user profile directly without session context
    */
   private async getUserProfileDirect(userId: string): Promise<User | null> {
-    const queryTimeout = 10000; // 10 second timeout
     try {
       console.log('AuthService: Getting user profile directly for:', userId);
       
       console.log('AuthService: Executing direct database query...');
       
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Database query timeout')), queryTimeout);
-      });
-      
-      // Race the query against the timeout
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
-      
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
       console.log('AuthService: Direct query completed with:', { hasData: !!data, error: error?.message || 'None' });
 

@@ -28,7 +28,6 @@ export class AuthViewModel {
    * Initialize authentication state
    */
   private async initialize(): Promise<void> {
-    let initializationComplete = false;
     console.log('AuthViewModel: Initializing...');
     
     // Set timeout to prevent infinite loading
@@ -40,14 +39,11 @@ export class AuthViewModel {
         initialized: true,
         error: null
       });
-      initializationComplete = true;
     }, 5000);
 
     try {
       // Set up auth state change listener
       this.authStateUnsubscribe = this.authService.onAuthStateChange((user) => {
-        if (initializationComplete) return; // Ignore if already timed out
-        
         console.log('AuthViewModel: Received auth state change from AuthService:', { userId: user?.id || 'No user' }); // NOVO LOG
         console.log('AuthViewModel: Auth state changed:', {
           userId: user?.id || 'No user',
@@ -57,7 +53,6 @@ export class AuthViewModel {
           timestamp: new Date().toISOString()
         });
         clearTimeout(initTimeout);
-        initializationComplete = true;
         this.updateState({
           user,
           loading: false,
@@ -80,7 +75,6 @@ export class AuthViewModel {
       if (error) {
         console.error('AuthViewModel: Failed to get initial session:', error);
         clearTimeout(initTimeout);
-        initializationComplete = true;
         this.updateState({
           user: null,
           loading: false,
@@ -94,7 +88,6 @@ export class AuthViewModel {
       if (!session) {
         console.log('AuthViewModel: No initial session found');
         clearTimeout(initTimeout);
-        initializationComplete = true;
         this.updateState({
           user: null,
           loading: false,
@@ -111,7 +104,6 @@ export class AuthViewModel {
     } catch (error) {
       console.error('AuthViewModel: Initialization error:', error);
       clearTimeout(initTimeout);
-      initializationComplete = true;
       this.updateState({
         user: null,
         loading: false,
