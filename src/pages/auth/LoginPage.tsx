@@ -37,6 +37,16 @@ const LoginPage = () => {
     }
   }, [state.initialized, initTimeout]);
 
+  // Handle redirect after successful authentication
+  useEffect(() => {
+    // Only redirect if user is authenticated, auth state is initialized, and we are not currently submitting the form
+    // The `isAuthenticated` from useAuthRedirect already checks for state.user and state.initialized
+    if (isAuthenticated && !isSubmitting) {
+      console.log('LoginPage: User authenticated, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, isSubmitting, navigate]);
+
   // Show loading while auth is initializing
   if (!state.initialized && !initTimeout) {
     return (
