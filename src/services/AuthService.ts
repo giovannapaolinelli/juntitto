@@ -4,8 +4,6 @@ import { AuthResponse, AuthError as SupabaseAuthError } from '@supabase/supabase
 
 export class AuthService {
   private static instance: AuthService;
-  private hasFetchedUser: boolean = false;
-  private isValidatedSession: boolean = false;
 
   private constructor() {}
 
@@ -264,12 +262,6 @@ export class AuthService {
    * Create user profile in users table
    */
   async createUserProfile(authUser: any): Promise<User | null> {
-    // Guard against creating profiles without validated session
-    if (!this.isValidatedSession) {
-      console.log('AuthService: Skipping user creation - session not validated');
-      return null;
-    }
-    
     const queryTimeout = 15000; // 15 second timeout for creation
     try {
       const userData = {
@@ -331,6 +323,8 @@ export class AuthService {
   onAuthStateChange(callback: (user: User | null) => void) {
     let isProcessing = false; // Prevent duplicate processing
     return supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('AuthService: Auth state changed (EVENT):', event); // NOVO LOG
+      console.log('AuthService: Auth state changed (SESSION):', session); // NOVO LOG
       console.log('AuthService: Auth state changed:', event, session?.user?.id || 'No user');
       
       // Prevent duplicate processing of the same event
@@ -339,46 +333,31 @@ export class AuthService {
         return;
       }
       
-      // Only process authenticated sessions for SIGNED_IN events or validated INITIAL_SESSION
-      const shouldProcessSession = this.shouldProcessAuthSession(event, session);
-      
-      if (shouldProcessSession && session?.user) {
+      if (session?.user) {
         isProcessing = true;
         console.log('AuthService: Session found, getting user profile for:', session.user.id);
         
         try {
-          // Only fetch if we haven't already or if this is a fresh login
-          let userProfile = null;
-          
-          if (!this.hasFetchedUser || event === 'SIGNED_IN') {
-            userProfile = await this.getUserProfileWithSession(session.user.id, session);
-            this.hasFetchedUser = true;
-          }
+          // Get or create user profile using the provided session
+          let userProfile = await this.getUserProfileWithSession(session.user.id, session);
           
           if (!userProfile) {
-            // Only create user profile for new sign-ups (SIGNED_IN after sign-up)
-            if (event === 'SIGNED_IN') {
-              console.log('AuthService: No user profile found, creating one...');
-              try {
-                userProfile = await this.createUserProfile(session.user);
-              } catch (createError) {
-                console.error('AuthService: User creation failed:', createError);
-                // Check if it's a duplicate key error (user already exists)
-                if (createError instanceof Error && createError.message.includes('23505')) {
-                  console.log('AuthService: User already exists, fetching existing profile...');
-                  userProfile = await this.getUserProfileDirect(session.user.id);
-                }
-                
-                // If still no profile, use fallback
-                if (!userProfile) {
-                  console.log('AuthService: Using fallback user object');
-                  userProfile = this.createFallbackUser(session.user);
-                }
-              }
-            } else {
-              // For INITIAL_SESSION without profile, use fallback
-              console.log('AuthService: Using fallback user for initial session');
-              userProfile = this.createFallbackUser(session.user);
+            console.log('AuthService: No user profile found, creating one...');
+            try {
+              userProfile = await this.createUserProfile(session.user);
+            } catch (createError) {
+              console.error('AuthService: User creation failed:', createError);
+              // If user creation fails, create a minimal user object from auth data
+              console.log('AuthService: Using fallback user object');
+              userProfile = {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+                plan: 'free' as const,
+                stripe_customer_id: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
             }
           }
           
@@ -386,7 +365,16 @@ export class AuthService {
           callback(userProfile);
         } catch (error) {
           console.error('AuthService: Error processing user profile:', error);
-          const fallbackUser = this.createFallbackUser(session.user);
+          // Create fallback user object
+          const fallbackUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            plan: 'free' as const,
+            stripe_customer_id: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
           console.log('AuthService: Using fallback user due to error:', fallbackUser);
           callback(fallbackUser);
         } finally {
@@ -394,8 +382,6 @@ export class AuthService {
         }
       } else {
         console.log('AuthService: No session, calling callback with null');
-        this.hasFetchedUser = false;
-        this.isValidatedSession = false;
         callback(null);
         isProcessing = false;
       }
@@ -403,72 +389,9 @@ export class AuthService {
   }
 
   /**
-   * Determine if we should process the auth session based on event type
-   */
-  private shouldProcessAuthSession(event: string, session: any): boolean {
-    console.log('AuthService: Evaluating session processing for event:', event);
-    
-    // Always process SIGNED_IN events (explicit login/signup)
-    if (event === 'SIGNED_IN') {
-      console.log('AuthService: Processing SIGNED_IN event');
-      this.isValidatedSession = true;
-      return true;
-    }
-    
-    // For INITIAL_SESSION, validate the session is legitimate
-    if (event === 'INITIAL_SESSION') {
-      if (!session || !session.user || !session.access_token) {
-        console.log('AuthService: Ignoring invalid INITIAL_SESSION');
-        return false;
-      }
-      
-      // Check if session is fresh (not expired)
-      const now = Math.floor(Date.now() / 1000);
-      if (session.expires_at && session.expires_at <= now) {
-        console.log('AuthService: Ignoring expired INITIAL_SESSION');
-        return false;
-      }
-      
-      console.log('AuthService: Processing valid INITIAL_SESSION');
-      this.isValidatedSession = true;
-      return true;
-    }
-    
-    // For SIGNED_OUT, always process
-    if (event === 'SIGNED_OUT') {
-      console.log('AuthService: Processing SIGNED_OUT event');
-      return true;
-    }
-    
-    console.log('AuthService: Ignoring event:', event);
-    return false;
-  }
-
-  /**
-   * Create fallback user object from auth data
-   */
-  private createFallbackUser(authUser: any): User {
-    return {
-      id: authUser.id,
-      email: authUser.email || '',
-      name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
-      plan: 'free' as const,
-      stripe_customer_id: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  }
-
-  /**
    * Get user profile using a specific session context
    */
   private async getUserProfileWithSession(userId: string, session: any): Promise<User | null> {
-    // Guard against invalid sessions
-    if (!session || !session.access_token || !this.isValidatedSession) {
-      console.log('AuthService: Skipping database query - invalid session');
-      return null;
-    }
-    
     const queryTimeout = 10000; // 10 second timeout
     try {
       console.log('AuthService: Getting user profile with session context for:', userId);

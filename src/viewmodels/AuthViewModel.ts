@@ -34,14 +34,12 @@ export class AuthViewModel {
     // Set timeout to prevent infinite loading
     const initTimeout = setTimeout(() => {
       console.warn('AuthViewModel: Initialization timeout after 5 seconds, marking as initialized');
-      if (!initializationComplete) {
-        this.updateState({
-          user: null,
-          loading: false,
-          initialized: true,
-          error: null
-        });
-      }
+      this.updateState({
+        user: null,
+        loading: false,
+        initialized: true,
+        error: null
+      });
       initializationComplete = true;
     }, 5000);
 
@@ -50,6 +48,7 @@ export class AuthViewModel {
       this.authStateUnsubscribe = this.authService.onAuthStateChange((user) => {
         if (initializationComplete) return; // Ignore if already timed out
         
+        console.log('AuthViewModel: Received auth state change from AuthService:', { userId: user?.id || 'No user' }); // NOVO LOG
         console.log('AuthViewModel: Auth state changed:', {
           userId: user?.id || 'No user',
           userEmail: user?.email || 'No email',
@@ -57,7 +56,6 @@ export class AuthViewModel {
           previousUser: this.state.user?.id || 'None',
           timestamp: new Date().toISOString()
         });
-        
         clearTimeout(initTimeout);
         initializationComplete = true;
         this.updateState({
@@ -68,7 +66,7 @@ export class AuthViewModel {
         });
       });
 
-      // Validate initial session without triggering profile fetch
+      // Get initial session
       const { session, error } = await this.authService.getCurrentSession();
       
       console.log('AuthViewModel: Initial session check:', {
@@ -94,7 +92,7 @@ export class AuthViewModel {
 
       // If no session, mark as initialized
       if (!session) {
-        console.log('AuthViewModel: No initial session found, marking as initialized');
+        console.log('AuthViewModel: No initial session found');
         clearTimeout(initTimeout);
         initializationComplete = true;
         this.updateState({
@@ -107,7 +105,7 @@ export class AuthViewModel {
 
       // If session exists, verify it's complete and valid
       if (session && session.user) {
-        console.log('AuthViewModel: Initial session found, waiting for auth state change processing');
+        console.log('AuthViewModel: Valid session found, waiting for auth state change listener');
       }
 
     } catch (error) {
