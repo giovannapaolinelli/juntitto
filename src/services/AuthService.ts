@@ -313,36 +313,62 @@ export class AuthService {
    */
   onAuthStateChange(callback: (user: User | null) => void) {
     return supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('AuthService: Auth state changed (EVENT):', event); // NOVO LOG
-      console.log('AuthService: Auth state changed (SESSION):', session); // NOVO LOG
+      console.log('AuthService: Auth state changed (EVENT):', event);
+      console.log('AuthService: Auth state changed (SESSION):', session);
       console.log('AuthService: Auth state changed:', event, session?.user?.id || 'No user');
       
       if (session?.user) {
         console.log('AuthService: Session found, getting user profile for:', session.user.id);
-        // Get or create user profile using the provided session
-        let userProfile = await this.getUserProfileWithSession(session.user.id, session);
         
-        if (!userProfile) {
-          console.log('AuthService: No user profile found, creating one...');
-          userProfile = await this.createUserProfile(session.user);
+        try {
+          // Add timeout to prevent hanging
+          const profilePromise = this.getUserProfileWithSession(session.user.id, session);
+          const timeoutPromise = new Promise<User | null>((_, reject) => {
+            setTimeout(() => reject(new Error('Profile retrieval timeout')), 5000);
+          });
           
-          // If user creation also fails, create a minimal user object from auth data
+          let userProfile = await Promise.race([profilePromise, timeoutPromise]);
+          
           if (!userProfile) {
-            console.log('AuthService: User creation failed, using fallback user object');
-            userProfile = {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-              plan: 'free' as const,
-              stripe_customer_id: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
+            console.log('AuthService: No user profile found, creating one...');
+            userProfile = await this.createUserProfile(session.user);
+            
+            // If user creation also fails, create a minimal user object from auth data
+            if (!userProfile) {
+              console.log('AuthService: User creation failed, using fallback user object');
+              userProfile = {
+                id: session.user.id,
+                email: session.user.email || 'user@example.com',
+                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+                plan: 'free' as const,
+                stripe_customer_id: undefined,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+            }
           }
+          
+          console.log('AuthService: Successfully retrieved/created user profile:', userProfile?.id);
+          console.log('AuthService: Calling callback with user profile:', userProfile?.id || 'No profile');
+          callback(userProfile);
+          
+        } catch (error) {
+          console.error('AuthService: Error getting user profile, using fallback:', error);
+          
+          // Create fallback user profile to ensure callback is always called
+          const fallbackProfile: User = {
+            id: session.user.id,
+            email: session.user.email || 'user@example.com',
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            plan: 'free' as const,
+            stripe_customer_id: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          console.log('AuthService: Using fallback profile due to error:', fallbackProfile.id);
+          callback(fallbackProfile);
         }
-        
-        console.log('AuthService: Calling callback with user profile:', userProfile?.id || 'No profile');
-        callback(userProfile);
       } else {
         console.log('AuthService: No session, calling callback with null');
         callback(null);
