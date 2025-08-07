@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Play, Settings, BarChart3, Users, Calendar, Copy, QrCode, MoreVertical } from 'lucide-react';
+import { Plus, Play, Settings, BarChart3, Users, Calendar, Copy, QrCode, MoreVertical, ExternalLink } from 'lucide-react';
 import { useQuizViewModel } from '../../viewmodels/QuizViewModel';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 import { useToast } from '../../contexts/ToastContext';
 import { useTranslation } from 'react-i18next';
+import { generateQRCodeURL } from '../../utils/qrCode';
 import QRCodeModal from '../../components/quiz/QRCodeModal';
 
 const Dashboard = () => {
@@ -13,7 +14,7 @@ const Dashboard = () => {
   const { state } = useAuth();
   const { isAuthenticated, isLoading } = useAuthRedirect();
   const { addToast } = useToast();
-  const { quizzes, loading } = useQuizViewModel(state.user?.id);
+  const { quizzes, loading, error, refreshQuizzes } = useQuizViewModel(state.user?.id);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
 
@@ -33,6 +34,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (state.user?.id) {
       console.log('Dashboard: Loading quizzes for user:', state.user.id);
+    } else {
+      console.log('Dashboard: No user ID available for loading quizzes');
     }
   }, [state.user?.id]);
 
@@ -70,8 +73,8 @@ const Dashboard = () => {
     navigator.clipboard.writeText(url);
     addToast({
       type: 'success',
-      title: 'Link copiado!',
-      message: 'O link do quiz foi copiado para a área de transferência'
+      title: t('qr.linkCopied'),
+      message: t('qr.linkCopiedMessage')
     });
   };
 
@@ -143,6 +146,21 @@ const Dashboard = () => {
           <div className="w-12 h-12 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">{t('common.loading')}</p>
         </div>
+      ) : error ? (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <BarChart3 className="w-12 h-12 text-red-500" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Erro ao carregar quizzes</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button 
+            onClick={refreshQuizzes}
+            className="inline-flex items-center bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 space-x-2"
+          >
+            <Play className="w-5 h-5" />
+            <span>Tentar Novamente</span>
+          </button>
+        </div>
       ) : (
       <>
       {quizzes.length === 0 ? (
@@ -190,12 +208,12 @@ const Dashboard = () => {
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="text-center p-3 bg-rose-50 rounded-lg">
-                    <Users className="w-5 h-5 text-rose-600 mx-auto mb-1" />
+                    <BarChart3 className="w-5 h-5 text-rose-600 mx-auto mb-1" />
                     <div className="text-lg font-semibold text-gray-900">{quiz.questions?.length || 0}</div>
                     <div className="text-xs text-gray-600">{t('dashboard.quiz.questions')}</div>
                   </div>
                   <div className="text-center p-3 bg-purple-50 rounded-lg">
-                    <BarChart3 className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+                    <Users className="w-5 h-5 text-purple-600 mx-auto mb-1" />
                     <div className="text-lg font-semibold text-gray-900">{quiz.guest_count}</div>
                     <div className="text-xs text-gray-600">{t('dashboard.quiz.responses')}</div>
                   </div>
@@ -204,7 +222,7 @@ const Dashboard = () => {
                 {/* Event Date */}
                 <div className="flex items-center text-sm text-gray-600 mb-6">
                   <Calendar className="w-4 h-4 mr-2" />
-                  <span>{t('dashboard.quiz.event', { date: new Date(quiz.event_date).toLocaleDateString() })}</span>
+                  <span>{t('dashboard.quiz.event', { date: new Date(quiz.event_date).toLocaleDateString('pt-BR') })}</span>
                 </div>
 
                 {/* Actions */}
@@ -226,6 +244,18 @@ const Dashboard = () => {
                         <span>{t('dashboard.quiz.qrCode')}</span>
                       </button>
                     </div>
+                  )}
+                  
+                  {quiz.status === 'active' && (
+                    <Link 
+                      to={`/play/${quiz.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center space-x-1 text-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Visualizar Quiz</span>
+                    </Link>
                   )}
                   
                   <div className="flex space-x-2">

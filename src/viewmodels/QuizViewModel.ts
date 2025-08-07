@@ -16,13 +16,23 @@ export class QuizViewModel {
   ) {}
 
   async loadUserQuizzes(userId: string): Promise<void> {
+    if (!userId) {
+      console.error('QuizViewModel: No user ID provided');
+      this.setError('User authentication required');
+      this.setLoading(false);
+      return;
+    }
+
+    console.log('QuizViewModel: Loading quizzes for user:', userId);
     this.setLoading(true);
     this.setError(null);
 
     try {
       const quizzes = await this.quizService.getUserQuizzes(userId);
+      console.log('QuizViewModel: Loaded quizzes:', quizzes.length);
       this.setQuizzes(quizzes);
     } catch (error) {
+      console.error('QuizViewModel: Error loading quizzes:', error);
       this.setError(error instanceof Error ? error.message : 'Failed to load quizzes');
     } finally {
       this.setLoading(false);

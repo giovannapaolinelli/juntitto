@@ -11,6 +11,10 @@ type QuestionUpdate = Database['public']['Tables']['questions']['Update'];
 
 export class QuizRepository {
   async getUserQuizzes(userId: string): Promise<Quiz[]> {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
     const { data, error } = await supabase
       .from('quizzes')
       .select(`
@@ -21,7 +25,11 @@ export class QuizRepository {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('QuizRepository: Error fetching user quizzes:', error);
+      throw new Error(`Failed to fetch quizzes: ${error.message}`);
+    }
+
     return (data || []).map(this.mapToQuiz);
   }
 
