@@ -10,8 +10,12 @@ const PreviewQuiz = () => {
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
+  const [showWelcome, setShowWelcome] = useState(true);
+  
+  console.log('PreviewQuiz: Rendering with quiz:', quiz);
 
   if (loading) {
+    console.log('PreviewQuiz: Loading quiz...');
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
@@ -23,6 +27,7 @@ const PreviewQuiz = () => {
   }
 
   if (!quiz) {
+    console.error('PreviewQuiz: Quiz not found');
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
@@ -40,6 +45,8 @@ const PreviewQuiz = () => {
 
   const questions = quiz.questions || [];
   const currentQ = questions[currentQuestion];
+  
+  console.log('PreviewQuiz: Current question:', currentQ);
 
   return (
     <div 
@@ -82,7 +89,7 @@ const PreviewQuiz = () => {
       </header>
 
       <div className="max-w-4xl mx-auto p-4 py-8">
-        {currentQuestion === -1 ? (
+        {showWelcome ? (
           /* Welcome Screen */
           <div className="text-center">
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto">
@@ -119,7 +126,7 @@ const PreviewQuiz = () => {
               </div>
               
               <button
-                onClick={() => setCurrentQuestion(0)}
+                onClick={() => setShowWelcome(false)}
                 className="w-full text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow"
                 style={{ 
                   background: `linear-gradient(to right, ${quiz.theme?.primary_color || '#ec4899'}, ${quiz.theme?.secondary_color || '#8b5cf6'})`
@@ -232,10 +239,10 @@ const PreviewQuiz = () => {
         )}
 
         {/* Start from Welcome Screen */}
-        {currentQuestion >= 0 && (
+        {!showWelcome && (
           <div className="text-center mt-8">
             <button
-              onClick={() => setCurrentQuestion(-1)}
+              onClick={() => setShowWelcome(true)}
               className="text-gray-600 hover:text-gray-800 transition-colors"
             >
               ← Back to Welcome Screen

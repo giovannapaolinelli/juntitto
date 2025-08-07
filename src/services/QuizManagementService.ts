@@ -21,21 +21,41 @@ export class QuizManagementService {
     user_id: string;
     theme_id: string;
   }): Promise<Quiz> {
+    console.log('QuizManagementService: Creating quiz with data:', quizData);
+    
+    // Validação básica
+    if (!quizData.title?.trim()) {
+      throw new Error('Quiz title is required');
+    }
+    
+    if (!quizData.user_id) {
+      throw new Error('User ID is required');
+    }
+    
+    if (!quizData.theme_id) {
+      throw new Error('Theme ID is required');
+    }
+
     const slug = await this.generateUniqueSlug(quizData.title);
+    console.log('QuizManagementService: Generated unique slug:', slug);
+    
+    const insertData = {
+      title: quizData.title.trim(),
+      slug,
+      description: quizData.description?.trim() || null,
+      event_date: quizData.event_date,
+      status: 'draft' as const,
+      user_id: quizData.user_id,
+      theme_id: quizData.theme_id,
+      max_guests: 30,
+      guest_count: 0
+    };
+    
+    console.log('QuizManagementService: Inserting quiz data:', insertData);
     
     const { data, error } = await supabase
       .from('quizzes')
-      .insert({
-        title: quizData.title,
-        slug,
-        description: quizData.description,
-        event_date: quizData.event_date,
-        status: 'draft',
-        user_id: quizData.user_id,
-        theme_id: quizData.theme_id,
-        max_guests: 30,
-        guest_count: 0
-      })
+      .insert(insertData)
       .select(`
         *,
         theme:themes(*),
@@ -43,17 +63,40 @@ export class QuizManagementService {
       `)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('QuizManagementService: Error creating quiz:', error);
+      if (error.code === '23505') {
+        throw new Error('Quiz with this title already exists. Please choose a different title.');
+      }
+      throw new Error(`Failed to create quiz: ${error.message}`);
+    }
+    
+    console.log('QuizManagementService: Quiz created successfully:', data);
     return this.mapToQuiz(data);
   }
 
   async updateQuiz(id: string, updates: Partial<Quiz>): Promise<Quiz> {
+    console.log('QuizManagementService: Updating quiz:', id, updates);
+    
+    if (!id) {
+      throw new Error('Quiz ID is required');
+    }
+    
+    // Limpa campos vazios
+    const cleanUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
+      if (value !== undefined && value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+    
+    cleanUpdates.updated_at = new Date().toISOString();
+    
+    console.log('QuizManagementService: Clean updates:', cleanUpdates);
+    
     const { data, error } = await supabase
       .from('quizzes')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .update(cleanUpdates)
       .eq('id', id)
       .select(`
         *,
@@ -62,11 +105,23 @@ export class QuizManagementService {
       `)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('QuizManagementService: Error updating quiz:', error);
+      throw new Error(`Failed to update quiz: ${error.message}`);
+    }
+    
+    console.log('QuizManagementService: Quiz updated successfully:', data);
     return this.mapToQuiz(data);
   }
 
   async getQuizById(id: string): Promise<Quiz | null> {
+    console.log('QuizManagementService: Fetching quiz by ID:', id);
+    
+    if (!id) {
+      console.warn('QuizManagementService: No ID provided');
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from('quizzes')
       .select(`
@@ -75,12 +130,23 @@ export class QuizManagementService {
         questions(*)
       `)
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') return null;
-      throw error;
+      console.error('QuizManagementService: Error fetching quiz:', error);
+      if (error.code === 'PGRST116') {
+        console.log('QuizManagementService: Quiz not found');
+        return null;
+      }
+      throw new Error(`Failed to fetch quiz: ${error.message}`);
     }
+    
+    if (!data) {
+      console.log('QuizManagementService: Quiz not found');
+      return null;
+    }
+    
+    console.log('QuizManagementService: Quiz fetched successfully:', data);
     return this.mapToQuiz(data);
   }
 
@@ -90,26 +156,50 @@ export class QuizManagementService {
     options: string[];
     correctAnswer: number;
   }): Promise<Question> {
+    console.log('QuizManagementService: Adding question to quiz:', quizId, questionData);
+    
+    // Validação
+    if (!questionData.text?.trim()) {
+      throw new Error('Question text is required');
+    }
+    
+    if (!questionData.options || questionData.options.length < 2) {
+      throw new Error('Question must have at least 2 options');
+    }
+    
+    if (questionData.correctAnswer < 0 || questionData.correctAnswer >= questionData.options.length) {
+      throw new Error('Invalid correct answer index');
+    }
+
     // Get current quiz to determine order
     const currentQuiz = await this.getQuizById(quizId);
     if (!currentQuiz) throw new Error('Quiz not found');
 
     const orderIndex = (currentQuiz.questions?.length || 0) + 1;
+    
+    const insertData = {
+      quiz_id: quizId,
+      text: questionData.text.trim(),
+      type: 'multiple_choice' as const,
+      order_index: orderIndex,
+      options: questionData.options.filter(opt => opt.trim()),
+      correct_answer: questionData.correctAnswer
+    };
+    
+    console.log('QuizManagementService: Inserting question data:', insertData);
 
     const { data, error } = await supabase
       .from('questions')
-      .insert({
-        quiz_id: quizId,
-        text: questionData.text,
-        type: 'multiple_choice',
-        order_index: orderIndex,
-        options: questionData.options,
-        correct_answer: questionData.correctAnswer
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('QuizManagementService: Error adding question:', error);
+      throw new Error(`Failed to add question: ${error.message}`);
+    }
+    
+    console.log('QuizManagementService: Question added successfully:', data);
     return this.mapToQuestion(data);
   }
 

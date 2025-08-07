@@ -187,25 +187,39 @@ export class QuizRepository {
   async generateUniqueSlug(title: string): Promise<string> {
     const baseSlug = title
       .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim();
+      .trim()
+      .substring(0, 50); // Limita tamanho
 
     let slug = baseSlug;
     let counter = 1;
 
     while (true) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('quizzes')
         .select('id')
         .eq('slug', slug)
-        .limit(1);
+        .maybeSingle();
 
-      if (!data || data.length === 0) break;
+      if (error && error.code !== 'PGRST116') {
+        console.error('QuizRepository: Error checking slug uniqueness:', error);
+        throw new Error('Failed to validate slug uniqueness');
+      }
+
+      if (!data) break; // Slug é único
       
       slug = `${baseSlug}-${counter}`;
       counter++;
+      
+      // Previne loop infinito
+      if (counter > 100) {
+        slug = `${baseSlug}-${Date.now()}`;
+        break;
+      }
     }
 
     return slug;

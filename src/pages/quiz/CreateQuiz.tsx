@@ -112,6 +112,7 @@ const CreateQuiz = () => {
     const validation = validateForm();
     
     if (!validation.isValid) {
+      console.log('CreateQuiz: Validation failed:', validation.errors);
       validation.errors.forEach(error => {
         addToast({
           type: 'error',
@@ -123,6 +124,7 @@ const CreateQuiz = () => {
     }
 
     if (!state.user) {
+      console.error('CreateQuiz: No authenticated user');
       addToast({
         type: 'error',
         title: 'Authentication Error',
@@ -131,19 +133,31 @@ const CreateQuiz = () => {
       return;
     }
 
+    console.log('CreateQuiz: Starting quiz creation process');
+    
     try {
-      const quiz = await createQuiz({
-        title: formData.title,
-        description: formData.description,
+      const quizData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         event_date: formData.event_date,
         user_id: state.user.id,
         theme_id: selectedThemeId
+      };
+      
+      console.log('CreateQuiz: Creating quiz with data:', quizData);
+      
+      const quiz = await createQuiz({
+        ...quizData
       });
+      
+      console.log('CreateQuiz: Quiz created successfully:', quiz);
 
       // Add questions to the created quiz
+      console.log('CreateQuiz: Adding questions to quiz');
       for (const question of questions) {
         const validOptions = question.options.filter(option => option.trim());
         if (validOptions.length >= 2) {
+          console.log('CreateQuiz: Adding question:', question.text);
           await addQuestion(quiz.id, {
             text: question.text,
             options: validOptions,
@@ -151,6 +165,8 @@ const CreateQuiz = () => {
           });
         }
       }
+      
+      console.log('CreateQuiz: All questions added successfully');
 
       addToast({
         type: 'success',
@@ -160,10 +176,11 @@ const CreateQuiz = () => {
       
       navigate(`/quiz/${quiz.id}/edit`);
     } catch (error) {
+      console.error('CreateQuiz: Error creating quiz:', error);
       addToast({
         type: 'error',
         title: 'Save Error',
-        message: 'Failed to save quiz. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to save quiz. Please try again.'
       });
     }
   };

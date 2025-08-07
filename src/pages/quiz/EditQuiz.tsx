@@ -44,6 +44,8 @@ const EditQuiz = () => {
 
   const handleSave = async () => {
     if (!quiz) return;
+    
+    console.log('EditQuiz: Starting save process');
 
     const validation = validateQuiz({
       ...quiz,
@@ -52,6 +54,7 @@ const EditQuiz = () => {
     });
 
     if (!validation.isValid) {
+      console.log('EditQuiz: Validation failed:', validation.errors);
       validation.errors.forEach(error => {
         addToast({
           type: 'error',
@@ -63,23 +66,29 @@ const EditQuiz = () => {
     }
 
     try {
+      console.log('EditQuiz: Updating quiz with data:', formData);
       await updateQuiz(quiz.id, formData);
+      console.log('EditQuiz: Quiz updated successfully');
+      
       addToast({
         type: 'success',
         title: 'Quiz Updated!',
         message: 'Your changes have been saved successfully'
       });
     } catch (error) {
+      console.error('EditQuiz: Error updating quiz:', error);
       addToast({
         type: 'error',
         title: 'Save Error',
-        message: 'Failed to save changes. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to save changes. Please try again.'
       });
     }
   };
 
   const handleAddQuestion = async () => {
     if (!quiz) return;
+    
+    console.log('EditQuiz: Adding new question to quiz:', quiz.id);
 
     try {
       await addQuestion(quiz.id, {
@@ -87,35 +96,43 @@ const EditQuiz = () => {
         options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
         correctAnswer: 0
       });
+      console.log('EditQuiz: Question added successfully');
+      
       addToast({
         type: 'success',
         title: 'Question Added',
         message: 'New question has been added to your quiz'
       });
     } catch (error) {
+      console.error('EditQuiz: Error adding question:', error);
       addToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to add question'
+        message: error instanceof Error ? error.message : 'Failed to add question'
       });
     }
   };
 
   const handleDeleteQuestion = async (questionId: string) => {
     if (!quiz) return;
+    
+    console.log('EditQuiz: Deleting question:', questionId);
 
     try {
       await deleteQuestion(questionId, quiz.id);
+      console.log('EditQuiz: Question deleted successfully');
+      
       addToast({
         type: 'success',
         title: 'Question Deleted',
         message: 'Question has been removed from your quiz'
       });
     } catch (error) {
+      console.error('EditQuiz: Error deleting question:', error);
       addToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to delete question'
+        message: error instanceof Error ? error.message : 'Failed to delete question'
       });
     }
   };
