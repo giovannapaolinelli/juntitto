@@ -333,7 +333,7 @@ export class QuizManagementService {
       created_at: data.created_at,
       updated_at: data.updated_at,
       theme: data.theme ? this.mapToTheme(data.theme) : undefined,
-      questions: data.questions ? data.questions.map(this.mapToQuestion) : []
+      questions: data.questions ? data.questions.map(q => this.mapToQuestion(q)) : []
     };
   }
 

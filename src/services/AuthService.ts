@@ -257,7 +257,7 @@ export class AuthService {
           // Add timeout to prevent hanging
           const profilePromise = this.getUserProfile(session.user.id);
           const timeoutPromise = new Promise<User | null>((_, reject) => {
-            setTimeout(() => reject(new Error('Profile retrieval timeout')), 5000);
+            setTimeout(() => reject(new Error('Profile retrieval timeout')), 10000);
           });
           
           let userProfile = await Promise.race([profilePromise, timeoutPromise]);

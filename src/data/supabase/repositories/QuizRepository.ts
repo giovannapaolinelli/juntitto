@@ -267,7 +267,7 @@ export class QuizRepository {
         is_premium: row.theme.is_premium,
         price: row.theme.price
       } : undefined,
-      questions: row.questions ? row.questions.map(this.mapToQuestion) : undefined
+      questions: row.questions ? row.questions.map(q => this.mapToQuestion(q)) : undefined
     };
   }
 
