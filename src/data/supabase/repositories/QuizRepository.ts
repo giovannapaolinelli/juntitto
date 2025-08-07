@@ -30,7 +30,7 @@ export class QuizRepository {
       throw new Error(`Failed to fetch quizzes: ${error.message}`);
     }
 
-    return (data || []).map(this.mapToQuiz);
+    return (data || []).map(quizData => this.mapToQuiz(quizData));
   }
 
   async getQuizById(id: string): Promise<Quiz | null> {
