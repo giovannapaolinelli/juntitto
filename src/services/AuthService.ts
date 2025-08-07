@@ -369,21 +369,6 @@ export class AuthService {
           console.log('AuthService: Using fallback profile due to error:', fallbackProfile.id);
           callback(fallbackProfile);
         }
-      } else {
-        console.log('AuthService: No session, calling callback with null');
-        callback(null);
-      }
-    });
-  }
-
-  /**
-   * Get user profile using a specific session context
-   */
-  private async getUserProfileWithSession(userId: string, session: any): Promise<User | null> {
-    try {
-      console.log('AuthService: Getting user profile with session context for:', userId);
-      console.log('AuthService: Session details:', { hasAccessToken: !!session?.access_token, expiresAt: session?.expires_at });
-      
       console.log('AuthService: Executing database query...');
       const { data, error } = await supabase
         .from('users')
