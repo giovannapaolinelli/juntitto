@@ -39,10 +39,7 @@ export class QuizManagementService {
       .select(`
         *,
         theme:themes(*),
-        questions(
-          *,
-          answers(*)
-        )
+        questions(*)
       `)
       .single();
 
@@ -61,10 +58,7 @@ export class QuizManagementService {
       .select(`
         *,
         theme:themes(*),
-        questions(
-          *,
-          answers(*)
-        )
+        questions(*)
       `)
       .single();
 
@@ -78,10 +72,7 @@ export class QuizManagementService {
       .select(`
         *,
         theme:themes(*),
-        questions(
-          *,
-          answers(*)
-        )
+        questions(*)
       `)
       .eq('id', id)
       .single();
@@ -94,52 +85,38 @@ export class QuizManagementService {
   }
 
   // Question CRUD Operations
-  async createQuestion(questionData: {
-    quiz_id: string;
+  async addQuestion(quizId: string, questionData: {
     text: string;
-    type?: string;
-    order_index: number;
-    answers: { text: string; is_correct: boolean }[];
+    options: string[];
+    correctAnswer: number;
   }): Promise<Question> {
-    const { data: questionData_result, error: questionError } = await supabase
+    // Get current quiz to determine order
+    const currentQuiz = await this.getQuizById(quizId);
+    if (!currentQuiz) throw new Error('Quiz not found');
+
+    const orderIndex = (currentQuiz.questions?.length || 0) + 1;
+
+    const { data, error } = await supabase
       .from('questions')
       .insert({
-        quiz_id: questionData.quiz_id,
+        quiz_id: quizId,
         text: questionData.text,
-        type: questionData.type || 'multiple_choice',
-        order_index: questionData.order_index,
-        options: questionData.answers.map(a => a.text),
-        correct_answer: questionData.answers.findIndex(a => a.is_correct)
+        type: 'multiple_choice',
+        order_index: orderIndex,
+        options: questionData.options,
+        correct_answer: questionData.correctAnswer
       })
       .select()
       .single();
 
-    if (questionError) throw questionError;
-
-    // Create answers
-    const answersToInsert = questionData.answers.map((answer, index) => ({
-      question_id: questionData_result.id,
-      text: answer.text,
-      is_correct: answer.is_correct,
-      order_index: index
-    }));
-
-    const { data: answersData, error: answersError } = await supabase
-      .from('answers')
-      .insert(answersToInsert)
-      .select();
-
-    if (answersError) throw answersError;
-
-    return {
-      ...this.mapToQuestion(questionData_result),
-      answers: answersData.map(this.mapToAnswer)
-    };
+    if (error) throw error;
+    return this.mapToQuestion(data);
   }
 
   async updateQuestion(id: string, updates: {
     text?: string;
-    answers?: { text: string; is_correct: boolean }[];
+    options?: string[];
+    correctAnswer?: number;
   }): Promise<Question> {
     const updateData: any = {};
     
@@ -147,9 +124,12 @@ export class QuizManagementService {
       updateData.text = updates.text;
     }
     
-    if (updates.answers) {
-      updateData.options = updates.answers.map(a => a.text);
-      updateData.correct_answer = updates.answers.findIndex(a => a.is_correct);
+    if (updates.options) {
+      updateData.options = updates.options;
+    }
+    
+    if (updates.correctAnswer !== undefined) {
+      updateData.correct_answer = updates.correctAnswer;
     }
 
     const { data: questionData, error: questionError } = await supabase
@@ -161,45 +141,10 @@ export class QuizManagementService {
 
     if (questionError) throw questionError;
 
-    // Update answers if provided
-    if (updates.answers) {
-      // Delete existing answers
-      await supabase
-        .from('answers')
-        .delete()
-        .eq('question_id', id);
-
-      // Create new answers
-      const answersToInsert = updates.answers.map((answer, index) => ({
-        question_id: id,
-        text: answer.text,
-        is_correct: answer.is_correct,
-        order_index: index
-      }));
-
-      const { data: answersData, error: answersError } = await supabase
-        .from('answers')
-        .insert(answersToInsert)
-        .select();
-
-      if (answersError) throw answersError;
-
-      return {
-        ...this.mapToQuestion(questionData),
-        answers: answersData.map(this.mapToAnswer)
-      };
-    }
-
     return this.mapToQuestion(questionData);
   }
 
   async deleteQuestion(id: string): Promise<void> {
-    // Delete answers first (cascade should handle this, but being explicit)
-    await supabase
-      .from('answers')
-      .delete()
-      .eq('question_id', id);
-
     const { error } = await supabase
       .from('questions')
       .delete()
@@ -265,12 +210,11 @@ export class QuizManagementService {
         errors.push(`Question ${index + 1} text is required`);
       }
 
-      if (!question.answers || question.answers.length < 2) {
+      if (!question.options || question.options.length < 2) {
         errors.push(`Question ${index + 1} must have at least 2 answers`);
       }
 
-      const hasCorrectAnswer = question.answers?.some(a => a.is_correct);
-      if (!hasCorrectAnswer) {
+      if (question.correct_answer < 0 || question.correct_answer >= (question.options?.length || 0)) {
         errors.push(`Question ${index + 1} must have one correct answer`);
       }
     });
@@ -299,10 +243,7 @@ export class QuizManagementService {
       created_at: data.created_at,
       updated_at: data.updated_at,
       theme: data.theme ? this.mapToTheme(data.theme) : undefined,
-      questions: data.questions ? data.questions.map((q: any) => ({
-        ...this.mapToQuestion(q),
-        answers: q.answers ? q.answers.map(this.mapToAnswer) : []
-      })) : []
+      questions: data.questions ? data.questions.map(this.mapToQuestion) : []
     };
   }
 
@@ -316,17 +257,6 @@ export class QuizManagementService {
       correct_answer: data.correct_answer,
       order_index: data.order_index,
       photo_url: data.photo_url,
-      created_at: data.created_at
-    };
-  }
-
-  private mapToAnswer(data: any): Answer {
-    return {
-      id: data.id,
-      question_id: data.question_id,
-      text: data.text,
-      is_correct: data.is_correct,
-      order_index: data.order_index,
       created_at: data.created_at
     };
   }

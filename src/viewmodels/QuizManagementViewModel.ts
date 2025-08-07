@@ -78,24 +78,14 @@ export class QuizManagementViewModel {
 
   async addQuestion(quizId: string, questionData: {
     text: string;
-    answers: { text: string; is_correct: boolean }[];
+    options: string[];
+    correctAnswer: number;
   }): Promise<void> {
     this.setSaving(true);
     this.setError(null);
 
     try {
-      // Get current quiz to determine order
-      const currentQuiz = await this.quizService.getQuizById(quizId);
-      if (!currentQuiz) throw new Error('Quiz not found');
-
-      const orderIndex = (currentQuiz.questions?.length || 0) + 1;
-
-      await this.quizService.createQuestion({
-        quiz_id: quizId,
-        text: questionData.text,
-        order_index: orderIndex,
-        answers: questionData.answers
-      });
+      await this.quizService.addQuestion(quizId, questionData);
 
       // Reload quiz to get updated data
       await this.loadQuiz(quizId);
@@ -110,14 +100,14 @@ export class QuizManagementViewModel {
 
   async updateQuestion(questionId: string, updates: {
     text?: string;
-    answers?: { text: string; is_correct: boolean }[];
+    options?: string[];
+    correctAnswer?: number;
   }): Promise<void> {
     this.setSaving(true);
     this.setError(null);
 
     try {
       await this.quizService.updateQuestion(questionId, updates);
-      // Note: You might want to reload the quiz here to get updated data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update question';
       this.setError(errorMessage);

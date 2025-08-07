@@ -84,12 +84,8 @@ const EditQuiz = () => {
     try {
       await addQuestion(quiz.id, {
         text: 'New Question',
-        answers: [
-          { text: 'Option 1', is_correct: true },
-          { text: 'Option 2', is_correct: false },
-          { text: 'Option 3', is_correct: false },
-          { text: 'Option 4', is_correct: false }
-        ]
+        options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+        correctAnswer: 0
       });
       addToast({
         type: 'success',

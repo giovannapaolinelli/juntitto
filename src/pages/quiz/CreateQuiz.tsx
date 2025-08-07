@@ -7,7 +7,8 @@ import { useQuizManagementViewModel } from '../../viewmodels/QuizManagementViewM
 
 interface QuestionForm {
   text: string;
-  answers: { text: string; is_correct: boolean }[];
+  options: string[];
+  correctAnswer: number;
 }
 
 const CreateQuiz = () => {
@@ -25,12 +26,8 @@ const CreateQuiz = () => {
   const [questions, setQuestions] = useState<QuestionForm[]>([
     {
       text: '',
-      answers: [
-        { text: '', is_correct: false },
-        { text: '', is_correct: false },
-        { text: '', is_correct: false },
-        { text: '', is_correct: false }
-      ]
+      options: ['', '', '', ''],
+      correctAnswer: 0
     }
   ]);
 
@@ -39,12 +36,8 @@ const CreateQuiz = () => {
   const addQuestion = () => {
     setQuestions(prev => [...prev, {
       text: '',
-      answers: [
-        { text: '', is_correct: false },
-        { text: '', is_correct: false },
-        { text: '', is_correct: false },
-        { text: '', is_correct: false }
-      ]
+      options: ['', '', '', ''],
+      correctAnswer: 0
     }]);
   };
 
@@ -60,29 +53,23 @@ const CreateQuiz = () => {
     ));
   };
 
-  const updateAnswer = (questionIndex: number, answerIndex: number, text: string) => {
+  const updateOption = (questionIndex: number, optionIndex: number, text: string) => {
     setQuestions(prev => prev.map((q, i) => 
       i === questionIndex 
         ? { 
             ...q, 
-            answers: q.answers.map((a, j) => 
-              j === answerIndex ? { ...a, text } : a
+            options: q.options.map((option, j) => 
+              j === optionIndex ? text : option
             )
           }
         : q
     ));
   };
 
-  const setCorrectAnswer = (questionIndex: number, answerIndex: number) => {
+  const setCorrectAnswer = (questionIndex: number, optionIndex: number) => {
     setQuestions(prev => prev.map((q, i) => 
       i === questionIndex 
-        ? { 
-            ...q, 
-            answers: q.answers.map((a, j) => ({ 
-              ...a, 
-              is_correct: j === answerIndex 
-            }))
-          }
+        ? { ...q, correctAnswer: optionIndex }
         : q
     ));
   };
@@ -107,13 +94,13 @@ const CreateQuiz = () => {
         errors.push(`Question ${qIndex + 1} text is required`);
       }
 
-      const filledAnswers = question.answers.filter(a => a.text.trim());
-      if (filledAnswers.length < 2) {
+      const filledOptions = question.options.filter(option => option.trim());
+      if (filledOptions.length < 2) {
         errors.push(`Question ${qIndex + 1} must have at least 2 answers`);
       }
 
-      const hasCorrectAnswer = question.answers.some(a => a.is_correct && a.text.trim());
-      if (!hasCorrectAnswer) {
+      const correctOptionText = question.options[question.correctAnswer];
+      if (!correctOptionText || !correctOptionText.trim()) {
         errors.push(`Question ${qIndex + 1} must have one correct answer`);
       }
     });
@@ -155,13 +142,13 @@ const CreateQuiz = () => {
 
       // Add questions to the created quiz
       for (const question of questions) {
-        const validAnswers = question.answers.filter(a => a.text.trim());
-        if (validAnswers.length >= 2) {
-          // This would need to be implemented in the service
-          // await addQuestion(quiz.id, {
-          //   text: question.text,
-          //   answers: validAnswers
-          // });
+        const validOptions = question.options.filter(option => option.trim());
+        if (validOptions.length >= 2) {
+          await addQuestion(quiz.id, {
+            text: question.text,
+            options: validOptions,
+            correctAnswer: question.correctAnswer
+          });
         }
       }
 
@@ -321,24 +308,24 @@ const CreateQuiz = () => {
                       Answer Options *
                     </label>
                     <div className="space-y-3">
-                      {question.answers.map((answer, aIndex) => (
-                        <div key={aIndex} className="flex items-center space-x-3">
+                      {question.options.map((option, oIndex) => (
+                        <div key={oIndex} className="flex items-center space-x-3">
                           <input
                             type="radio"
                             name={`correct-${qIndex}`}
-                            checked={answer.is_correct}
-                            onChange={() => setCorrectAnswer(qIndex, aIndex)}
+                            checked={question.correctAnswer === oIndex}
+                            onChange={() => setCorrectAnswer(qIndex, oIndex)}
                             className="w-4 h-4 text-rose-600 focus:ring-rose-500"
                           />
                           <input
                             type="text"
-                            value={answer.text}
-                            onChange={(e) => updateAnswer(qIndex, aIndex, e.target.value)}
-                            placeholder={`Option ${aIndex + 1}`}
+                            value={option}
+                            onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
+                            placeholder={`Option ${oIndex + 1}`}
                             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors"
                           />
                           <span className="text-sm text-gray-500 w-16">
-                            {answer.is_correct && (
+                            {question.correctAnswer === oIndex && (
                               <span className="text-green-600 font-medium">Correct</span>
                             )}
                           </span>

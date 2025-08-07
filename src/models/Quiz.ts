@@ -27,17 +27,8 @@ export interface Question {
   order_index: number;
   photo_url?: string;
   created_at: string;
-  answers?: Answer[];
 }
 
-export interface Answer {
-  id: string;
-  question_id: string;
-  text: string;
-  is_correct: boolean;
-  order_index: number;
-  created_at: string;
-}
 
 export interface Theme {
   id: string;
