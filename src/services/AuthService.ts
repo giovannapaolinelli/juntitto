@@ -370,44 +370,7 @@ export class AuthService {
           callback(fallbackProfile);
         }
       }
-      console.log('AuthService: Executing database query...');
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      console.log('AuthService: Database query completed with:', { hasData: !!data, error: error?.message || 'None' });
-
-      console.log('AuthService: Database query completed:', {
-        hasData: !!data,
-        userData: data,
-        error: error?.message || 'None',
-        errorCode: error?.code || 'None'
-      });
-
-      if (error) {
-        console.log('AuthService: Database error details:', error);
-        if (error.code === 'PGRST116') {
-          console.log('AuthService: User profile not found in database, will need to create one');
-          return null;
-        }
-        console.error('AuthService: Database error when getting user profile:', error);
-        return null;
-      }
-
-      if (!data) {
-        console.log('AuthService: No user profile data returned from database');
-        return null;
-      }
-
-      console.log('AuthService: User profile found successfully:', data);
-      return data;
-    } catch (error) {
-      console.error('AuthService: Exception in getUserProfileWithSession:', error);
-      return null;
-    }
-    )
+    });
   }
 
   /**
