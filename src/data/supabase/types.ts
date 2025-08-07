@@ -174,32 +174,23 @@ export interface Database {
         Row: {
           id: string;
           quiz_id: string;
-          text: string;
-          type: string;
-          options: string[];
-          correct_answer: number;
-          order_index: number;
-          photo_url: string | null;
+          question_text: string;
+          options: any;
+          correct_option_index: number;
           created_at: string;
         };
         Insert: {
           id?: string;
           quiz_id: string;
-          text: string;
-          type?: string;
-          options?: string[];
-          correct_answer?: number;
-          order_index?: number;
-          photo_url?: string | null;
+          question_text: string;
+          options?: any;
+          correct_option_index?: number;
           created_at?: string;
         };
         Update: {
-          text?: string;
-          type?: string;
-          options?: string[];
-          correct_answer?: number;
-          order_index?: number;
-          photo_url?: string | null;
+          question_text?: string;
+          options?: any;
+          correct_option_index?: number;
         };
       };
       answers: {

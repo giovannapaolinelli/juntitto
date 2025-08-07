@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Palette, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { useQuizManagementViewModel } from '../../viewmodels/QuizManagementViewModel';
+import { useQuestionViewModel } from '../../viewmodels/QuestionViewModel';
 
 const EditQuiz = () => {
   const { id } = useParams();
@@ -20,6 +21,13 @@ const EditQuiz = () => {
     deleteQuestion,
     validateQuiz 
   } = useQuizManagementViewModel(id);
+  const { 
+    questions: quizQuestions, 
+    loadQuestions, 
+    saveQuestions, 
+    saving: savingQuestions,
+    error: questionError 
+  } = useQuestionViewModel();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -42,6 +50,22 @@ const EditQuiz = () => {
     }
   }, [quiz]);
 
+  useEffect(() => {
+    if (id) {
+      loadQuestions(id);
+    }
+  }, [id, loadQuestions]);
+
+  useEffect(() => {
+    if (quizQuestions.length > 0) {
+      setQuestions(quizQuestions.map(q => ({
+        id: q.id,
+        question_text: q.question_text,
+        options: q.options,
+        correct_option_index: q.correct_option_index
+      })));
+    }
+  }, [quizQuestions]);
   const handleSave = async () => {
     if (!quiz) return;
     
@@ -70,6 +94,24 @@ const EditQuiz = () => {
       await updateQuiz(quiz.id, formData);
       console.log('EditQuiz: Quiz updated successfully');
       
+      // Salvar perguntas se houver alterações
+      if (questions.length > 0) {
+        console.log('EditQuiz: Saving questions');
+        const questionsToSave = questions
+          .filter(q => q.question_text && q.question_text.trim())
+          .map(q => ({
+            id: q.id,
+            question_text: q.question_text.trim(),
+            options: Array.isArray(q.options) ? q.options.filter(opt => opt && opt.trim()) : [],
+            correct_option_index: q.correct_option_index || 0
+          }));
+
+        if (questionsToSave.length > 0) {
+          await saveQuestions(quiz.id, questionsToSave);
+          console.log('EditQuiz: Questions saved successfully');
+        }
+      }
+
       addToast({
         type: 'success',
         title: 'Quiz Updated!',
@@ -88,53 +130,23 @@ const EditQuiz = () => {
   const handleAddQuestion = async () => {
     if (!quiz) return;
     
-    console.log('EditQuiz: Adding new question to quiz:', quiz.id);
-
-    try {
-      await addQuestion(quiz.id, {
-        text: 'New Question',
-        options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
-        correctAnswer: 0
-      });
-      console.log('EditQuiz: Question added successfully');
-      
-      addToast({
-        type: 'success',
-        title: 'Question Added',
-        message: 'New question has been added to your quiz'
-      });
-    } catch (error) {
-      console.error('EditQuiz: Error adding question:', error);
-      addToast({
-        type: 'error',
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to add question'
-      });
-    }
+    const newQuestion = {
+      question_text: 'Nova Pergunta',
+      options: ['Opção 1', 'Opção 2', 'Opção 3', 'Opção 4'],
+      correct_option_index: 0
+    };
+    
+    setQuestions(prev => [...prev, newQuestion]);
   };
 
   const handleDeleteQuestion = async (questionId: string) => {
-    if (!quiz) return;
-    
-    console.log('EditQuiz: Deleting question:', questionId);
+    setQuestions(prev => prev.filter(q => q.id !== questionId));
+  };
 
-    try {
-      await deleteQuestion(questionId, quiz.id);
-      console.log('EditQuiz: Question deleted successfully');
-      
-      addToast({
-        type: 'success',
-        title: 'Question Deleted',
-        message: 'Question has been removed from your quiz'
-      });
-    } catch (error) {
-      console.error('EditQuiz: Error deleting question:', error);
-      addToast({
-        type: 'error',
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to delete question'
-      });
-    }
+  const updateQuestionText = (questionId: string, text: string) => {
+    setQuestions(prev => prev.map(q => 
+      q.id === questionId ? { ...q, question_text: text } : q
+    ));
   };
 
   if (loading) {
@@ -199,10 +211,11 @@ const EditQuiz = () => {
           <button 
             onClick={handleSave}
             disabled={saving}
+            disabled={saving || savingQuestions}
             className="flex items-center space-x-2 bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            <span>{saving ? 'Saving...' : 'Save'}</span>
+            <span>{saving || savingQuestions ? 'Salvando...' : 'Salvar'}</span>
           </button>
         </div>
       </div>
@@ -300,12 +313,9 @@ const EditQuiz = () => {
                       Question Text
                     </label>
                     <textarea
-                      value={question.text}
+                      value={question.question_text}
                       onChange={(e) => {
-                        // Update question text locally
-                        setQuestions(prev => prev.map(q => 
-                          q.id === question.id ? { ...q, text: e.target.value } : q
-                        ));
+                        updateQuestionText(question.id, e.target.value);
                       }}
                       rows={2}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors resize-none"
@@ -322,7 +332,7 @@ const EditQuiz = () => {
                           <input
                             type="radio"
                             name={`correct-${question.id}`}
-                            checked={question.correct_answer === optionIndex}
+                            checked={question.correct_option_index === optionIndex}
                             readOnly
                             className="w-4 h-4 text-rose-600 focus:ring-rose-500"
                           />
@@ -333,7 +343,7 @@ const EditQuiz = () => {
                             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
                           />
                           <span className="text-sm text-gray-500 w-16">
-                            {question.correct_answer === optionIndex && (
+                            {question.correct_option_index === optionIndex && (
                               <span className="text-green-600 font-medium">Correct</span>
                             )}
                           </span>

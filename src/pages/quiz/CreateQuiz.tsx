@@ -4,11 +4,12 @@ import { Plus, Trash2, ArrowLeft, Save, Eye, Palette } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useQuizManagementViewModel } from '../../viewmodels/QuizManagementViewModel';
+import { useQuestionViewModel } from '../../viewmodels/QuestionViewModel';
 
 interface QuestionForm {
-  text: string;
+  question_text: string;
   options: string[];
-  correctAnswer: number;
+  correct_option_index: number;
 }
 
 const CreateQuiz = () => {
@@ -16,6 +17,7 @@ const CreateQuiz = () => {
   const { state } = useAuth();
   const { addToast } = useToast();
   const { themes, createQuiz, validateQuiz, saving } = useQuizManagementViewModel();
+  const { saveQuestions, saving: savingQuestions, error: questionError } = useQuestionViewModel();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -25,9 +27,9 @@ const CreateQuiz = () => {
   
   const [questions, setQuestions] = useState<QuestionForm[]>([
     {
-      text: '',
+      question_text: '',
       options: ['', '', '', ''],
-      correctAnswer: 0
+      correct_option_index: 0
     }
   ]);
 
@@ -35,9 +37,9 @@ const CreateQuiz = () => {
 
   const addQuestion = () => {
     setQuestions(prev => [...prev, {
-      text: '',
+      question_text: '',
       options: ['', '', '', ''],
-      correctAnswer: 0
+      correct_option_index: 0
     }]);
   };
 
@@ -69,7 +71,7 @@ const CreateQuiz = () => {
   const setCorrectAnswer = (questionIndex: number, optionIndex: number) => {
     setQuestions(prev => prev.map((q, i) => 
       i === questionIndex 
-        ? { ...q, correctAnswer: optionIndex }
+        ? { ...q, correct_option_index: optionIndex }
         : q
     ));
   };
@@ -90,7 +92,7 @@ const CreateQuiz = () => {
     }
 
     questions.forEach((question, qIndex) => {
-      if (!question.text.trim()) {
+      if (!question.question_text.trim()) {
         errors.push(`Question ${qIndex + 1} text is required`);
       }
 
@@ -99,7 +101,7 @@ const CreateQuiz = () => {
         errors.push(`Question ${qIndex + 1} must have at least 2 answers`);
       }
 
-      const correctOptionText = question.options[question.correctAnswer];
+      const correctOptionText = question.options[question.correct_option_index];
       if (!correctOptionText || !correctOptionText.trim()) {
         errors.push(`Question ${qIndex + 1} must have one correct answer`);
       }
@@ -152,21 +154,22 @@ const CreateQuiz = () => {
       
       console.log('CreateQuiz: Quiz created successfully:', quiz);
 
-      // Add questions to the created quiz
-      console.log('CreateQuiz: Adding questions to quiz');
-      for (const question of questions) {
-        const validOptions = question.options.filter(option => option.trim());
-        if (validOptions.length >= 2) {
-          console.log('CreateQuiz: Adding question:', question.text);
-          await addQuestion(quiz.id, {
-            text: question.text,
-            options: validOptions,
-            correctAnswer: question.correctAnswer
-          });
+      // Salvar perguntas vinculadas ao quiz
+      if (questions.length > 0) {
+        console.log('CreateQuiz: Saving questions to quiz');
+        const questionsToSave = questions
+          .filter(q => q.question_text.trim() && q.options.filter(opt => opt.trim()).length >= 2)
+          .map(q => ({
+            question_text: q.question_text.trim(),
+            options: q.options.filter(opt => opt.trim()),
+            correct_option_index: q.correct_option_index
+          }));
+
+        if (questionsToSave.length > 0) {
+          await saveQuestions(quiz.id, questionsToSave);
+          console.log('CreateQuiz: Questions saved successfully');
         }
       }
-      
-      console.log('CreateQuiz: All questions added successfully');
 
       addToast({
         type: 'success',
@@ -206,10 +209,11 @@ const CreateQuiz = () => {
           <button 
             onClick={handleSave}
             disabled={saving}
+            disabled={saving || savingQuestions}
             className="flex items-center space-x-2 bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            <span>{saving ? 'Saving...' : 'Save Quiz'}</span>
+            <span>{saving || savingQuestions ? 'Salvando...' : 'Salvar Quiz'}</span>
           </button>
         </div>
       </div>
@@ -312,8 +316,8 @@ const CreateQuiz = () => {
                       Question Text *
                     </label>
                     <textarea
-                      value={question.text}
-                      onChange={(e) => updateQuestion(qIndex, 'text', e.target.value)}
+                      value={question.question_text}
+                      onChange={(e) => updateQuestion(qIndex, 'question_text', e.target.value)}
                       placeholder="Ex: Where did we meet?"
                       rows={2}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors resize-none"
@@ -330,7 +334,7 @@ const CreateQuiz = () => {
                           <input
                             type="radio"
                             name={`correct-${qIndex}`}
-                            checked={question.correctAnswer === oIndex}
+                            checked={question.correct_option_index === oIndex}
                             onChange={() => setCorrectAnswer(qIndex, oIndex)}
                             className="w-4 h-4 text-rose-600 focus:ring-rose-500"
                           />
@@ -342,7 +346,7 @@ const CreateQuiz = () => {
                             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors"
                           />
                           <span className="text-sm text-gray-500 w-16">
-                            {question.correctAnswer === oIndex && (
+                            {question.correct_option_index === oIndex && (
                               <span className="text-green-600 font-medium">Correct</span>
                             )}
                           </span>
@@ -370,9 +374,10 @@ const CreateQuiz = () => {
           <button 
             onClick={handleSave}
             disabled={saving}
+            disabled={saving || savingQuestions}
             className="px-6 py-3 bg-gradient-to-r from-rose-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save and Continue'}
+            {saving || savingQuestions ? 'Salvando...' : 'Salvar e Continuar'}
           </button>
         </div>
       </div>
