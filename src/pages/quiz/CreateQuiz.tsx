@@ -1,129 +1,184 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft, Save, Eye, Palette } from 'lucide-react';
-import { useQuizzes } from '../../hooks/useQuizzes';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { Question } from '../../types';
+import { useQuizManagementViewModel } from '../../viewmodels/QuizManagementViewModel';
+
+interface QuestionForm {
+  text: string;
+  answers: { text: string; is_correct: boolean }[];
+}
 
 const CreateQuiz = () => {
   const navigate = useNavigate();
-  const { createQuiz } = useQuizzes();
+  const { state } = useAuth();
   const { addToast } = useToast();
+  const { themes, createQuiz, validateQuiz, saving } = useQuizManagementViewModel();
   
-  const [quiz, setQuiz] = useState({
+  const [formData, setFormData] = useState({
     title: '',
-    eventDate: '',
-    questions: [] as Question[]
+    description: '',
+    event_date: ''
   });
   
-  const [questions, setQuestions] = useState<Omit<Question, 'id' | 'quizId'>[]>([
+  const [questions, setQuestions] = useState<QuestionForm[]>([
     {
       text: '',
-      type: 'multiple_choice' as const,
-      options: ['', '', '', ''],
-      correctAnswer: 0,
-      order: 1
+      answers: [
+        { text: '', is_correct: false },
+        { text: '', is_correct: false },
+        { text: '', is_correct: false },
+        { text: '', is_correct: false }
+      ]
     }
   ]);
 
-  const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedThemeId, setSelectedThemeId] = useState(themes[0]?.id || '');
 
   const addQuestion = () => {
-    const newQuestion = {
+    setQuestions(prev => [...prev, {
       text: '',
-      type: 'multiple_choice' as const,
-      options: ['', '', '', ''],
-      correctAnswer: 0,
-      order: questions.length + 1
-    };
-    setQuestions(prev => [...prev, newQuestion]);
+      answers: [
+        { text: '', is_correct: false },
+        { text: '', is_correct: false },
+        { text: '', is_correct: false },
+        { text: '', is_correct: false }
+      ]
+    }]);
   };
 
-  const updateQuestion = (questionIndex: number, field: string, value: any) => {
-    setQuestions(prev => prev.map((q, index) => 
-      index === questionIndex ? { ...q, [field]: value } : q
+  const removeQuestion = (index: number) => {
+    if (questions.length > 1) {
+      setQuestions(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateQuestion = (questionIndex: number, field: string, value: string) => {
+    setQuestions(prev => prev.map((q, i) => 
+      i === questionIndex ? { ...q, [field]: value } : q
     ));
   };
 
-  const updateQuestionOption = (questionIndex: number, optionIndex: number, value: string) => {
-    setQuestions(prev => prev.map((q, index) => 
-      index === questionIndex 
-        ? { ...q, options: q.options.map((opt, idx) => idx === optionIndex ? value : opt) }
+  const updateAnswer = (questionIndex: number, answerIndex: number, text: string) => {
+    setQuestions(prev => prev.map((q, i) => 
+      i === questionIndex 
+        ? { 
+            ...q, 
+            answers: q.answers.map((a, j) => 
+              j === answerIndex ? { ...a, text } : a
+            )
+          }
         : q
     ));
   };
 
-  const removeQuestion = (questionIndex: number) => {
-    if (questions.length > 1) {
-      setQuestions(prev => prev.filter((_, index) => index !== questionIndex));
-    }
+  const setCorrectAnswer = (questionIndex: number, answerIndex: number) => {
+    setQuestions(prev => prev.map((q, i) => 
+      i === questionIndex 
+        ? { 
+            ...q, 
+            answers: q.answers.map((a, j) => ({ 
+              ...a, 
+              is_correct: j === answerIndex 
+            }))
+          }
+        : q
+    ));
   };
 
-  const validateForm = () => {
-    if (!quiz.title.trim()) {
-      addToast({
-        type: 'error',
-        title: 'Título obrigatório',
-        message: 'Por favor, adicione um título para o quiz'
-      });
-      return false;
+  const validateForm = (): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    if (!formData.title.trim()) {
+      errors.push('Quiz title is required');
     }
 
-    const invalidQuestions = questions.filter(q => 
-      !q.text.trim() || q.options.some(opt => !opt.trim())
-    );
-
-    if (invalidQuestions.length > 0) {
-      addToast({
-        type: 'error',
-        title: 'Perguntas incompletas',
-        message: 'Por favor, complete todas as perguntas e opções'
-      });
-      return false;
+    if (!formData.event_date) {
+      errors.push('Event date is required');
     }
 
-    return true;
+    if (!selectedThemeId) {
+      errors.push('Please select a theme');
+    }
+
+    questions.forEach((question, qIndex) => {
+      if (!question.text.trim()) {
+        errors.push(`Question ${qIndex + 1} text is required`);
+      }
+
+      const filledAnswers = question.answers.filter(a => a.text.trim());
+      if (filledAnswers.length < 2) {
+        errors.push(`Question ${qIndex + 1} must have at least 2 answers`);
+      }
+
+      const hasCorrectAnswer = question.answers.some(a => a.is_correct && a.text.trim());
+      if (!hasCorrectAnswer) {
+        errors.push(`Question ${qIndex + 1} must have one correct answer`);
+      }
+    });
+
+    return { isValid: errors.length === 0, errors };
   };
 
   const handleSave = async () => {
-    if (!validateForm()) return;
-
-    setLoading(true);
-    try {
-      await createQuiz({
-        title: quiz.title,
-        eventDate: quiz.eventDate
+    const validation = validateForm();
+    
+    if (!validation.isValid) {
+      validation.errors.forEach(error => {
+        addToast({
+          type: 'error',
+          title: 'Validation Error',
+          message: error
+        });
       });
-      
+      return;
+    }
+
+    if (!state.user) {
+      addToast({
+        type: 'error',
+        title: 'Authentication Error',
+        message: 'You must be logged in to create a quiz'
+      });
+      return;
+    }
+
+    try {
+      const quiz = await createQuiz({
+        title: formData.title,
+        description: formData.description,
+        event_date: formData.event_date,
+        user_id: state.user.id,
+        theme_id: selectedThemeId
+      });
+
+      // Add questions to the created quiz
+      for (const question of questions) {
+        const validAnswers = question.answers.filter(a => a.text.trim());
+        if (validAnswers.length >= 2) {
+          // This would need to be implemented in the service
+          // await addQuestion(quiz.id, {
+          //   text: question.text,
+          //   answers: validAnswers
+          // });
+        }
+      }
+
       addToast({
         type: 'success',
-        title: 'Quiz criado!',
-        message: 'Seu quiz foi salvo com sucesso'
+        title: 'Quiz Created!',
+        message: 'Your quiz has been saved successfully'
       });
       
-      navigate('/dashboard');
+      navigate(`/quiz/${quiz.id}/edit`);
     } catch (error) {
       addToast({
         type: 'error',
-        title: 'Erro ao salvar',
-        message: 'Não foi possível salvar o quiz. Tente novamente.'
+        title: 'Save Error',
+        message: 'Failed to save quiz. Please try again.'
       });
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const handlePreview = () => {
-    if (!validateForm()) return;
-    // In a real app, this would pass the quiz data to preview
-    navigate('/quiz/preview/temp');
-  };
-
-  const handleCustomize = () => {
-    if (!validateForm()) return;
-    // In a real app, this would pass the quiz data to customize
-    navigate('/quiz/customize/temp');
   };
 
   return (
@@ -138,114 +193,108 @@ const CreateQuiz = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Criar Novo Quiz</h1>
-            <p className="text-gray-600">Configure as informações básicas e adicione suas perguntas</p>
+            <h1 className="text-3xl font-bold text-gray-900">Create New Quiz</h1>
+            <p className="text-gray-600">Set up your quiz information and add questions</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
           <button 
-            onClick={handlePreview}
-            className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <Eye className="w-4 h-4" />
-            <span>Visualizar</span>
-          </button>
-          <button 
-            onClick={handleCustomize}
-            className="flex items-center space-x-2 bg-purple-100 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors"
-          >
-            <Palette className="w-4 h-4" />
-            <span>Personalizar</span>
-          </button>
-          <button 
             onClick={handleSave}
-            disabled={loading}
+            disabled={saving}
             className="flex items-center space-x-2 bg-gradient-to-r from-rose-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            <span>{loading ? 'Salvando...' : 'Salvar Quiz'}</span>
+            <span>{saving ? 'Saving...' : 'Save Quiz'}</span>
           </button>
-        </div>
-      </div>
-
-      {/* Progress Steps */}
-      <div className="flex items-center justify-center mb-8">
-        <div className="flex items-center space-x-4">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-            currentStep >= 1 ? 'bg-rose-500 text-white' : 'bg-gray-200 text-gray-600'
-          }`}>
-            1
-          </div>
-          <div className={`w-16 h-1 ${currentStep >= 2 ? 'bg-rose-500' : 'bg-gray-200'}`}></div>
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-            currentStep >= 2 ? 'bg-rose-500 text-white' : 'bg-gray-200 text-gray-600'
-          }`}>
-            2
-          </div>
-          <div className={`w-16 h-1 ${currentStep >= 3 ? 'bg-rose-500' : 'bg-gray-200'}`}></div>
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-            currentStep >= 3 ? 'bg-rose-500 text-white' : 'bg-gray-200 text-gray-600'
-          }`}>
-            3
-          </div>
         </div>
       </div>
 
       <div className="space-y-8">
         {/* Quiz Information */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Informações do Quiz</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Quiz Information</h2>
           
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Título do Quiz *
+                Quiz Title *
               </label>
               <input
                 type="text"
-                value={quiz.title}
-                onChange={(e) => setQuiz(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Ex: Nossa História de Amor"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Ex: Our Love Story"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors"
               />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data do Evento
+                Event Date *
               </label>
               <input
                 type="date"
-                value={quiz.eventDate}
-                onChange={(e) => setQuiz(prev => ({ ...prev, eventDate: e.target.value }))}
+                value={formData.event_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, event_date: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors"
               />
             </div>
+          </div>
+
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Brief description of your quiz"
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors resize-none"
+            />
+          </div>
+
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Theme *
+            </label>
+            <select
+              value={selectedThemeId}
+              onChange={(e) => setSelectedThemeId(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors"
+            >
+              <option value="">Select a theme</option>
+              {themes.map(theme => (
+                <option key={theme.id} value={theme.id}>
+                  {theme.name} {theme.is_premium ? '(Premium)' : ''}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         {/* Questions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Perguntas</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Questions</h2>
             <button
               onClick={addQuestion}
               className="flex items-center space-x-2 bg-gradient-to-r from-rose-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-shadow"
             >
               <Plus className="w-4 h-4" />
-              <span>Adicionar Pergunta</span>
+              <span>Add Question</span>
             </button>
           </div>
 
           <div className="space-y-6">
-            {questions.map((question, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-6">
+            {questions.map((question, qIndex) => (
+              <div key={qIndex} className="border border-gray-200 rounded-lg p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Pergunta {index + 1}</h3>
+                  <h3 className="text-lg font-medium text-gray-900">Question {qIndex + 1}</h3>
                   {questions.length > 1 && (
                     <button
-                      onClick={() => removeQuestion(index)}
+                      onClick={() => removeQuestion(qIndex)}
                       className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -256,12 +305,12 @@ const CreateQuiz = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Texto da Pergunta *
+                      Question Text *
                     </label>
                     <textarea
                       value={question.text}
-                      onChange={(e) => updateQuestion(index, 'text', e.target.value)}
-                      placeholder="Ex: Onde nos conhecemos?"
+                      onChange={(e) => updateQuestion(qIndex, 'text', e.target.value)}
+                      placeholder="Ex: Where did we meet?"
                       rows={2}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors resize-none"
                     />
@@ -269,35 +318,35 @@ const CreateQuiz = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Opções de Resposta
+                      Answer Options *
                     </label>
                     <div className="space-y-3">
-                      {question.options.map((option, optionIndex) => (
-                        <div key={optionIndex} className="flex items-center space-x-3">
+                      {question.answers.map((answer, aIndex) => (
+                        <div key={aIndex} className="flex items-center space-x-3">
                           <input
                             type="radio"
-                            name={`correct-${index}`}
-                            checked={question.correctAnswer === optionIndex}
-                            onChange={() => updateQuestion(index, 'correctAnswer', optionIndex)}
+                            name={`correct-${qIndex}`}
+                            checked={answer.is_correct}
+                            onChange={() => setCorrectAnswer(qIndex, aIndex)}
                             className="w-4 h-4 text-rose-600 focus:ring-rose-500"
                           />
                           <input
                             type="text"
-                            value={option}
-                            onChange={(e) => updateQuestionOption(index, optionIndex, e.target.value)}
-                            placeholder={`Opção ${optionIndex + 1}`}
+                            value={answer.text}
+                            onChange={(e) => updateAnswer(qIndex, aIndex, e.target.value)}
+                            placeholder={`Option ${aIndex + 1}`}
                             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-colors"
                           />
                           <span className="text-sm text-gray-500 w-16">
-                            {question.correctAnswer === optionIndex && (
-                              <span className="text-green-600 font-medium">Correta</span>
+                            {answer.is_correct && (
+                              <span className="text-green-600 font-medium">Correct</span>
                             )}
                           </span>
                         </div>
                       ))}
                     </div>
                     <p className="text-sm text-gray-500 mt-2">
-                      Selecione o botão de opção ao lado da resposta correta
+                      Select the radio button next to the correct answer
                     </p>
                   </div>
                 </div>
@@ -312,14 +361,14 @@ const CreateQuiz = () => {
             onClick={() => navigate('/dashboard')}
             className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Cancelar
+            Cancel
           </button>
           <button 
             onClick={handleSave}
-            disabled={loading}
+            disabled={saving}
             className="px-6 py-3 bg-gradient-to-r from-rose-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50"
           >
-            {loading ? 'Salvando...' : 'Salvar e Continuar'}
+            {saving ? 'Saving...' : 'Save and Continue'}
           </button>
         </div>
       </div>

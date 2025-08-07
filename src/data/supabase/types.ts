@@ -176,7 +176,7 @@ export interface Database {
           quiz_id: string;
           text: string;
           type: string;
-          options: any[];
+          options: string[];
           correct_answer: number;
           order_index: number;
           photo_url: string | null;
@@ -187,7 +187,7 @@ export interface Database {
           quiz_id: string;
           text: string;
           type?: string;
-          options?: any[];
+          options?: string[];
           correct_answer?: number;
           order_index?: number;
           photo_url?: string | null;
@@ -196,10 +196,33 @@ export interface Database {
         Update: {
           text?: string;
           type?: string;
-          options?: any[];
+          options?: string[];
           correct_answer?: number;
           order_index?: number;
           photo_url?: string | null;
+        };
+      };
+      answers: {
+        Row: {
+          id: string;
+          question_id: string;
+          text: string;
+          is_correct: boolean;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          question_id: string;
+          text: string;
+          is_correct?: boolean;
+          order_index?: number;
+          created_at?: string;
+        };
+        Update: {
+          text?: string;
+          is_correct?: boolean;
+          order_index?: number;
         };
       };
       quiz_results: {
