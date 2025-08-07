@@ -136,13 +136,21 @@ export class QuestionRepository {
       }
     });
 
-    const upsertData = questions.map(q => ({
-      id: q.id || undefined,
-      quiz_id: quizId,
-      question_text: q.question_text.trim(),
-      options: q.options.filter(opt => opt.trim()),
-      correct_option_index: q.correct_option_index
-    }));
+    const upsertData = questions.map(q => {
+      const data: any = {
+        quiz_id: quizId,
+        question_text: q.question_text.trim(),
+        options: q.options.filter(opt => opt.trim()),
+        correct_option_index: q.correct_option_index
+      };
+      
+      // Only include id for existing questions (updates)
+      if (q.id) {
+        data.id = q.id;
+      }
+      
+      return data;
+    });
 
     const { data, error } = await supabase
       .from('questions')

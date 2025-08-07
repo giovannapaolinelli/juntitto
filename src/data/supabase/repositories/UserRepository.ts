@@ -60,6 +60,33 @@ export class UserRepository {
     return this.mapToUser(data);
   }
 
+  async getUserById(userId: string): Promise<User | null> {
+    try {
+      console.log('UserRepository: Getting user by ID:', userId);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('UserRepository: User not found in database');
+          return null;
+        }
+        console.error('UserRepository: Error getting user by ID:', error);
+        throw error;
+      }
+
+      console.log('UserRepository: User found successfully');
+      return this.mapToUser(data);
+    } catch (error) {
+      console.error('UserRepository: Exception in getUserById:', error);
+      return null;
+    }
+  }
+
   async getUserUsage(userId: string): Promise<{
     quiz_count: number;
     total_guests: number;

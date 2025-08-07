@@ -1,9 +1,11 @@
 import { supabase } from '../data/supabase/client';
 import { User, LoginCredentials, SignupCredentials, AuthError } from '../types/auth';
 import { AuthResponse, AuthError as SupabaseAuthError } from '@supabase/supabase-js';
+import { UserRepository } from '../data/supabase/repositories/UserRepository';
 
 export class AuthService {
   private static instance: AuthService;
+  private userRepository = new UserRepository();
 
   private constructor() {}
 
@@ -208,50 +210,7 @@ export class AuthService {
   private async getUserProfile(userId: string): Promise<User | null> {
     try {
       console.log('AuthService: Getting user profile from database for:', userId);
-      
-      // Ensure we have a valid session before querying
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('AuthService: Session error when getting user profile:', sessionError);
-        return null;
-      }
-      
-      if (!session) {
-        console.error('AuthService: No session available for user profile query');
-        return null;
-      }
-      
-      console.log('AuthService: Session confirmed, executing database query...');
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      console.log('AuthService: Database query result:', {
-        hasData: !!data,
-        userData: data,
-        error: error?.message || 'None'
-      });
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('AuthService: User profile not found in database, will need to create one');
-          return null;
-        }
-        console.error('AuthService: Get user profile database error:', error);
-        return null;
-      }
-
-      if (!data) {
-        console.log('AuthService: No user profile found in database for:', userId);
-      } else {
-        console.log('AuthService: User profile found:', data);
-      }
-
-      return data;
+      return await this.userRepository.getUserById(userId);
     } catch (error) {
       console.error('AuthService: Unexpected get user profile error:', error);
       return null;
@@ -263,47 +222,21 @@ export class AuthService {
    */
   async createUserProfile(authUser: any): Promise<User | null> {
     try {
-      const userData = {
+      console.log('AuthService: Creating user profile for:', authUser.id);
+      
+      return await this.userRepository.createUser({
         id: authUser.id,
         email: authUser.email,
-        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
-        plan: 'free' as const
-      };
-
-      console.log('AuthService: Creating user profile:', userData);
-      console.log('AuthService: Executing user creation query...');
-      
-      const { data, error } = await supabase
-        .from('users')
-        .insert(userData)
-        .select()
-        .single();
-
-      console.log('AuthService: User creation completed with:', { hasData: !!data, error: error?.message || 'None' });
-
-      console.log('AuthService: User creation query completed:', {
-        hasData: !!data,
-        userData: data,
-        error: error?.message || 'None',
-        errorCode: error?.code || 'None'
+        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User'
       });
-
-      if (error) {
-        // If user already exists, try to fetch it instead
-        console.log('AuthService: User creation failed, checking if user exists...');
-        if (error.code === '23505') {
-          console.log('AuthService: User already exists, fetching existing profile...');
-          return this.getUserProfileDirect(authUser.id);
-        }
-        
-        console.error('AuthService: Create user profile error:', error);
-        return null;
-      }
-
-      console.log('AuthService: User profile created successfully:', data);
-      return data;
     } catch (error) {
-      console.error('AuthService: Unexpected create user profile error:', error);
+      // If user already exists, try to fetch it instead
+      if (error?.code === '23505') {
+        console.log('AuthService: User already exists, fetching existing profile...');
+        return await this.userRepository.getUserById(authUser.id);
+      }
+      
+      console.error('AuthService: Error creating user profile:', error);
       return null;
     }
   }
