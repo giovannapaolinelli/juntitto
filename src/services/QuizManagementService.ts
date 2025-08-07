@@ -272,9 +272,9 @@ export class QuizManagementService {
         .from('quizzes')
         .select('id')
         .eq('slug', slug)
-        .single();
+        .limit(1);
 
-      if (!data) break;
+      if (!data || data.length === 0) break;
       
       slug = `${baseSlug}-${counter}`;
       counter++;

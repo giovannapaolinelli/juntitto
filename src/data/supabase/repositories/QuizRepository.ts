@@ -203,14 +203,14 @@ export class QuizRepository {
         .from('quizzes')
         .select('id')
         .eq('slug', slug)
-        .maybeSingle();
+        .limit(1);
 
       if (error && error.code !== 'PGRST116') {
         console.error('QuizRepository: Error checking slug uniqueness:', error);
         throw new Error('Failed to validate slug uniqueness');
       }
 
-      if (!data) break; // Slug é único
+      if (!data || data.length === 0) break; // Slug é único
       
       slug = `${baseSlug}-${counter}`;
       counter++;

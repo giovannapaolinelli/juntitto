@@ -322,7 +322,7 @@ export class AuthService {
         
         try {
           // Add timeout to prevent hanging
-          const profilePromise = this.getUserProfileWithSession(session.user.id, session);
+          const profilePromise = this.getUserProfile(session.user.id);
           const timeoutPromise = new Promise<User | null>((_, reject) => {
             setTimeout(() => reject(new Error('Profile retrieval timeout')), 5000);
           });
