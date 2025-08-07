@@ -369,6 +369,7 @@ export class AuthService {
           console.log('AuthService: Using fallback profile due to error:', fallbackProfile.id);
           callback(fallbackProfile);
         }
+      }
       console.log('AuthService: Executing database query...');
       const { data, error } = await supabase
         .from('users')
@@ -406,6 +407,7 @@ export class AuthService {
       console.error('AuthService: Exception in getUserProfileWithSession:', error);
       return null;
     }
+    )
   }
 
   /**
